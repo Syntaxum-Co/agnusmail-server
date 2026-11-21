@@ -1,4 +1,4 @@
-"""Background worker entry point: ``python -m apps.worker``.
+"""Background worker entry point: ``python -m agnusmail.apps.worker``.
 
 Runs as the database runtime role; outside the local environment it refuses to start
 with a privileged role. SIGTERM/SIGINT stop it after the current job.

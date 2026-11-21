@@ -1,0 +1,28 @@
+# Environment and secrets: never in the build context
+.env
+.env.*
+secrets/
+*.key
+*.pem
+
+# VCS and tooling
+.git
+.github
+.gitignore
+
+# Python artifacts
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# Not needed in the image
+docs/
+tests/
+scripts/
+*.md
+!README.md

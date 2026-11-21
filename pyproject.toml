@@ -1,0 +1,123 @@
+[project]
+name = "agnusmail"
+version = "0.1.0"
+description = "Agnusmail backend — E2EE email platform with Ethereum/SIWE identity"
+readme = "README.md"
+license = "AGPL-3.0-only"
+license-files = ["LICENSE"]
+requires-python = ">=3.13,<3.14"
+dependencies = [
+    "fastapi>=0.115",
+    # Plain uvicorn plus only the production speedups; the [standard] extra would also
+    # ship watchfiles (dev reload) and websockets (unused) in the production image.
+    "uvicorn>=0.32",
+    "httptools>=0.6",
+    "uvloop>=0.21; sys_platform != 'win32'",
+    "pydantic>=2.9",
+    "pydantic-settings>=2.6",
+    "sqlalchemy>=2.0.36",
+    "alembic>=1.14",
+    "psycopg[binary]>=3.2",
+    "redis>=5.2",
+    "structlog>=24.5",
+    "eth-account>=0.13",
+    # OpenPGP (RFC 9580 + RFC 9980 PQC) via Sequoia: parse/validate device certificates,
+    # verify public signatures, encrypt to public keys (never decrypts user data).
+    # Pinned exactly: pre-1.0 API; upgrades are reviewed.
+    "pysequoia==0.1.35",
+    # WebAuthn/passkeys: registration and assertion verification, no own crypto.
+    "webauthn>=3.0.1,<4",
+    # S3-compatible object storage for encrypted attachments. Only presigned URLs, HEAD
+    # and DELETE are used.
+    "boto3==1.43.118",
+    # Inbound SMTP gateway: in-memory SMTP server, no spool.
+    # 1.4.6 fixes SMTP smuggling (CVE-2024-27305) and STARTTLS injection (CVE-2024-34083).
+    "aiosmtpd==1.4.6",
+    # Outbound SMTP and domain checks: MX/A/AAAA/TXT lookups. 2.9.2
+    # (under 2 weeks old when adopted) fixes CVE-2026-128089 (WKS zone-text parsing).
+    "dnspython==2.9.2",
+    # DKIM signing (RFC 6376) of outbound mail; depends only on dnspython.
+    "dkimpy==1.1.8",
+    # Already locked as a transitive dependency; used directly to create the DKIM RSA key.
+    "cryptography==50.0.2",
+    # Metrics: counters and histograms only, no dependencies.
+    "prometheus-client==0.26.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+    "pytest-asyncio>=0.25",
+    "pytest-cov>=6.0",
+    "httpx>=0.28",   # AsyncClient/ASGITransport in tests
+    "httpx2>=0.1",   # required by starlette's TestClient
+    "ruff>=0.8",
+    "mypy>=1.13",
+    "pip-audit>=2.10",
+    # Property-based tests / fuzzing of parsers (SMTP, headers, packets).
+    "hypothesis==6.170.14",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/agnusmail"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py313"
+src = ["src", "apps", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "S", "N"]
+ignore = ["S101"]  # asserts are required in tests
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S105", "S106"]
+# Opens presigned URLs produced by the test S3 storage (http/https only).
+"tests/integration/test_attachments_s3.py" = ["S310"]
+
+[tool.mypy]
+python_version = "3.13"
+strict = true
+files = ["src", "apps", "tests"]
+explicit_package_bases = true
+mypy_path = "src"
+namespace_packages = true
+
+[[tool.mypy.overrides]]
+module = ["uvicorn.*"]
+ignore_missing_imports = true
+
+# No type information shipped; only `infrastructure/openpgp.py` touches it, behind typed
+# wrappers.
+[[tool.mypy.overrides]]
+module = ["pysequoia", "pysequoia.*"]
+ignore_missing_imports = true
+
+# boto3/botocore ship no type information; only infrastructure/object_storage.py uses them.
+[[tool.mypy.overrides]]
+module = ["boto3", "boto3.*", "botocore", "botocore.*"]
+ignore_missing_imports = true
+
+# dkimpy ships no type information; only modules/outbound/dkim.py uses it.
+[[tool.mypy.overrides]]
+module = ["dkim", "dkim.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+# Integration tests need real PostgreSQL/Redis; CI runs them with `-m integration`.
+addopts = "--strict-markers -m 'not integration'"
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+markers = [
+    "integration: tests requiring real PostgreSQL/Redis (docker compose)",
+]
+filterwarnings = ["error"]
+
+[tool.coverage.run]
+source = ["src/agnusmail"]

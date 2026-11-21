@@ -1,0 +1,5 @@
+# Shell scripts run inside Linux containers: always LF.
+*.sh text eol=lf
+*.pgp binary
+# Rspamd configuration is read inside a Linux container: always LF.
+docker/rspamd/** text eol=lf

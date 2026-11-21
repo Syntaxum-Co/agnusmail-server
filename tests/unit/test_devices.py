@@ -9,10 +9,10 @@ from eth_account import Account
 from fastapi.testclient import TestClient
 
 from agnusmail.modules.authentication import dependencies
-from tests.openpgp_helpers import DeviceKeys, new_device
-from tests.unit.auth_helpers import LoggedIn, login
-from tests.unit.device_helpers import add_key, wallet_certificate, wallet_revocation
-from tests.unit.fakes import make_app, make_settings
+from agnusmail.testing.auth import LoggedIn, login
+from agnusmail.testing.devices import add_key, wallet_certificate, wallet_revocation
+from agnusmail.testing.fakes import make_app, make_settings
+from agnusmail.testing.openpgp import DeviceKeys, new_device
 
 DEVICES = "/v1/devices"
 UA = {"User-Agent": "AgnusTest/1.0"}

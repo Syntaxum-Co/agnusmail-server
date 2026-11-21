@@ -39,11 +39,13 @@ def test_register_login_creates_once_and_is_case_insensitive() -> None:
     factory = make_session_factory()
     now = datetime(2026, 11, 10, 12, 0, tzinfo=UTC)
     with factory() as session, session.begin():
-        first = register_login(session, CHECKSUM_ADDRESS, now)
+        first, created = register_login(session, CHECKSUM_ADDRESS, now)
         first_id = first.id
+        assert created
     with factory() as session, session.begin():
-        again = register_login(session, CHECKSUM_ADDRESS.lower(), now)
+        again, created = register_login(session, CHECKSUM_ADDRESS.lower(), now)
         assert again.id == first_id
+        assert not created
     with factory() as session:
         assert session.scalars(select(User)).all() == [get_by_id(session, first_id)]
         user = get_by_address(session, CHECKSUM_ADDRESS.upper().replace("0X", "0x"))

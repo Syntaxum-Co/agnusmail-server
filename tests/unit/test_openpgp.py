@@ -12,7 +12,7 @@ from agnusmail.infrastructure.openpgp import (
     inspect_device_certificate,
     verify_detached,
 )
-from tests.openpgp_helpers import (
+from agnusmail.testing.openpgp import (
     DIRECT_KEY,
     SUBKEY_BINDING,
     new_device,

@@ -157,20 +157,19 @@ def evaluate_abuse(ctx: JobContext, _payload: Mapping[str, Any]) -> None:
     log.info("abuse_evaluated", accounts=len(senders), restricted=restricted)
 
 
-REGISTRY = JobRegistry(
-    [
-        # A broken chain needs a human, not retries.
-        JobSpec("audit.verify", verify_audit_chains, max_attempts=1),
-        JobSpec("audit.purge", purge_audit, max_attempts=3),
-        JobSpec("jobs.cleanup", clean_jobs, max_attempts=3),
-        JobSpec("attachments.cleanup", clean_attachments, max_attempts=3),
-        JobSpec("recovery.migrations", complete_migrations, max_attempts=5),
-        JobSpec("outbound.purge", purge_outbound, max_attempts=3),
-        JobSpec("portal.purge", purge_portal, max_attempts=3),
-        JobSpec("usage.recompute", recompute_usage, max_attempts=3),
-        JobSpec("abuse.evaluate", evaluate_abuse, max_attempts=3),
-    ]
+JOBS: tuple[JobSpec, ...] = (
+    # A broken chain needs a human, not retries.
+    JobSpec("audit.verify", verify_audit_chains, max_attempts=1),
+    JobSpec("audit.purge", purge_audit, max_attempts=3),
+    JobSpec("jobs.cleanup", clean_jobs, max_attempts=3),
+    JobSpec("attachments.cleanup", clean_attachments, max_attempts=3),
+    JobSpec("recovery.migrations", complete_migrations, max_attempts=5),
+    JobSpec("outbound.purge", purge_outbound, max_attempts=3),
+    JobSpec("portal.purge", purge_portal, max_attempts=3),
+    JobSpec("usage.recompute", recompute_usage, max_attempts=3),
+    JobSpec("abuse.evaluate", evaluate_abuse, max_attempts=3),
 )
+REGISTRY = JobRegistry(list(JOBS))
 
 
 @dataclass(frozen=True)

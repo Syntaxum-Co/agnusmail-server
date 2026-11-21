@@ -14,8 +14,8 @@ from sqlalchemy.orm import Session, sessionmaker
 from agnusmail.modules.audit.integrity import verify_user_chain
 from agnusmail.modules.audit.models import AuditEvent
 from agnusmail.modules.identity.models import User, UserStatus
-from tests.unit.fakes import make_app, make_session_factory
-from tests.unit.test_auth import build_message, sign
+from agnusmail.testing.auth import build_message, sign
+from agnusmail.testing.fakes import make_app, make_session_factory
 
 UA_A = {"User-Agent": "BrowserA/1.0"}
 UA_B = {"User-Agent": "Curl/8.0"}

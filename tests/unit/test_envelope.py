@@ -11,7 +11,7 @@ from agnusmail.infrastructure.openpgp import (
     inspect_device_certificate,
     pkesk_recipient,
 )
-from tests.openpgp_helpers import encrypt_split, new_device
+from agnusmail.testing.openpgp import encrypt_split, new_device
 
 
 def reason(fn: object, data: bytes) -> str:

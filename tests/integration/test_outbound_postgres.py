@@ -40,10 +40,10 @@ from agnusmail.modules.outbound.models import (
 )
 from agnusmail.modules.outbound.queue_key import QueueKey, generate_queue_key, load_queue_key
 from agnusmail.modules.outbound.sender import OutboundSender
+from agnusmail.testing.people import Person
 from tests.integration.test_inbound_no_plaintext import found_in_database, found_in_redis
 from tests.integration.test_messages_postgres import live_person
 from tests.outbound_helpers import FakeResolver, TestMta
-from tests.unit.test_messages import Person
 from tests.unit.test_outbound_dkim import receiver_dns
 
 pytestmark = pytest.mark.integration

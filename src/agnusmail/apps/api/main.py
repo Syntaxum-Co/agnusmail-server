@@ -4,6 +4,12 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import Any
 
+from fastapi import FastAPI, Request
+from fastapi.concurrency import run_in_threadpool
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+from sqlalchemy.orm import Session, sessionmaker
+
 from agnusmail.apps.api.middleware.body_limit import (
     RequestBodyLimitMiddleware,
     RequestBodyTooLarge,
@@ -21,12 +27,6 @@ from agnusmail.apps.api.middleware.security import (
     install_security_headers,
 )
 from agnusmail.apps.api.routes import health
-from fastapi import FastAPI, Request
-from fastapi.concurrency import run_in_threadpool
-from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
-from sqlalchemy.orm import Session, sessionmaker
-
 from agnusmail.core.config import Settings, get_settings
 from agnusmail.core.exceptions import AgnusmailError, error_payload
 from agnusmail.core.logging import ThrottledWarning, configure_logging, get_logger

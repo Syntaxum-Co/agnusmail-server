@@ -22,6 +22,21 @@ Thanks for helping. A few rules keep the project safe to use.
 Security vulnerabilities go through private reporting, not issues: see
 [SECURITY.md](SECURITY.md).
 
+## How a change reaches main
+
+Nobody pushes to `main`, maintainers included:
+
+1. Fork the repository (or, for maintainers, create a branch `feat/<name>`,
+   `fix/<name>`, ...).
+2. Open a pull request against `main`, following the template.
+3. CI runs on it: lint, types, unit and integration tests, the container image, the
+   OpenPGP.js interoperability test and the dependency audit. It uses no secret, so it
+   runs the same on forks. A maintainer may need to approve the first run of a new
+   contributor's workflows.
+4. A code owner reviews it. New commits dismiss earlier approvals.
+5. It is squash-merged once every check passes, so `main` stays a linear history of
+   reviewed changes. Releases are signed tags `vX.Y.Z` that only maintainers create.
+
 ## Workflow
 
 ```sh

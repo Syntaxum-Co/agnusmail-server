@@ -19,8 +19,8 @@ from agnusmail.infrastructure.openpgp import (
 )
 from agnusmail.modules.inbound.delivery import register_gateway_key
 from agnusmail.modules.inbound.keyfile import KeyFileError, create_signing_key, read_signing_key
-from tests.openpgp_helpers import new_device
-from tests.unit.fakes import make_app, make_session_factory
+from agnusmail.testing.fakes import make_app, make_session_factory
+from agnusmail.testing.openpgp import new_device
 
 NOW = datetime.now(UTC)
 
@@ -107,7 +107,7 @@ def test_gateway_refuses_to_start_without_its_safeguards(
     from structlog.testing import capture_logs
 
     import agnusmail.apps.smtp_inbound.__main__ as entry
-    from tests.unit.fakes import make_settings
+    from agnusmail.testing.fakes import make_settings
     from tests.unit.test_config import DEPLOYED
 
     complete = DEPLOYED | {

@@ -66,7 +66,7 @@ def lock_chain_head(session: Session, owner_id: uuid.UUID) -> AuditChainHead:
 def record_event(
     session: Session,
     actor: ActorContext | None,
-    event_type: AuditEventType,
+    event_type: AuditEventType | str,
     *,
     owner_id: uuid.UUID,
     device_id: uuid.UUID | None = None,
@@ -74,7 +74,9 @@ def record_event(
     details: dict[str, Any] | None = None,
     now: datetime | None = None,
 ) -> AuditEvent:
-    """Append an event to the owner's chain. ``actor=None`` means the system."""
+    """Append an event to the owner's chain. ``actor=None`` means the system.
+    ``event_type`` is a built-in ``AuditEventType`` or a type an extension registered in
+    ``audit_event_types`` (the foreign key refuses any other)."""
     head = lock_chain_head(session, owner_id)
     created_at = now or datetime.now(UTC)
     payload: dict[str, Any] = dict(details or {})

@@ -16,3 +16,7 @@ updates:
     directory: /docker
     schedule:
       interval: weekly
+    # The project targets Python 3.13 (pyproject.toml): patch updates of the image only.
+    ignore:
+      - dependency-name: python
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]

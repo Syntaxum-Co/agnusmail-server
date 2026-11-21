@@ -10,8 +10,8 @@ from fastapi.testclient import TestClient
 from agnusmail.core.security import SECURE_SESSION_COOKIE_NAME
 from agnusmail.infrastructure.database import session as db_session
 from agnusmail.infrastructure.redis.client import RedisClient
-from tests.unit.fakes import make_app, make_settings
-from tests.unit.test_auth import build_message, sign
+from agnusmail.testing.auth import build_message, sign
+from agnusmail.testing.fakes import make_app, make_settings
 
 
 def test_redis_pool_has_socket_timeouts() -> None:

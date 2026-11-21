@@ -28,9 +28,9 @@ from agnusmail.modules.audit.models import AuditEvent
 from agnusmail.modules.messages.models import Message, MessageOrigin
 from agnusmail.modules.outbound.models import OutboundMessage
 from agnusmail.modules.portal.models import PortalLink, PortalMessage
-from tests.openpgp_helpers import DeviceKeys, encrypt_split, new_device
-from tests.unit.fakes import make_app, make_session_factory, make_settings
-from tests.unit.test_messages import Person, person, published
+from agnusmail.testing.fakes import make_app, make_session_factory, make_settings
+from agnusmail.testing.openpgp import DeviceKeys, encrypt_split, new_device
+from agnusmail.testing.people import Person, person, published
 from tests.unit.test_outbound import claim, register_outbound_key
 
 PORTAL = "/v1/portal"

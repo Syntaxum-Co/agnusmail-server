@@ -3,6 +3,9 @@
 Every active account gets the same storage limit (``storage_quota_bytes``). Over the
 limit, or suspended, only what grows is refused: reading, moving and deleting always
 work, and nothing is ever deleted to make room.
+
+An extension can subclass ``QuotaPolicy`` and override ``quota_bytes_for`` (a limit per
+account) and ``growth_refusal`` (a reason an active account may not grow right now).
 """
 
 import uuid
@@ -34,9 +37,10 @@ class RecipientMailboxUnavailableError(AgnusmailError):
 
 @dataclass(frozen=True)
 class Standing:
-    active: bool
+    active: bool  # false: suspended
     stored_bytes: int
     quota_bytes: int
+    refusal: AgnusmailError | None = None  # why the account may not grow now, if at all
 
     @property
     def full(self) -> bool:
@@ -51,19 +55,32 @@ class QuotaPolicy:
     def from_settings(cls, settings: Settings) -> "QuotaPolicy":
         return cls(quota_bytes=settings.storage_quota_bytes)
 
+    def quota_bytes_for(self, session: Session, user_id: uuid.UUID, now: datetime) -> int:
+        """The account's storage limit. The same for everyone unless overridden."""
+        return self.quota_bytes
+
+    def growth_refusal(
+        self, session: Session, user_id: uuid.UUID, now: datetime
+    ) -> AgnusmailError | None:
+        """Why an active account may not grow right now; None when it may."""
+        return None
+
     def standing(self, session: Session, user_id: uuid.UUID, now: datetime) -> Standing:
-        del now  # kept so callers do not depend on how the policy decides
         status = session.scalar(select(User.status).where(User.id == user_id))
+        active = status == UserStatus.ACTIVE
         return Standing(
-            active=status == UserStatus.ACTIVE,
+            active=active,
             stored_bytes=stored_bytes(session, user_id),
-            quota_bytes=self.quota_bytes,
+            quota_bytes=self.quota_bytes_for(session, user_id, now),
+            refusal=self.growth_refusal(session, user_id, now)
+            if active
+            else AccountSuspendedError(),
         )
 
     def require_active(self, session: Session, user_id: uuid.UUID, now: datetime) -> Standing:
         standing = self.standing(session, user_id, now)
-        if not standing.active:
-            raise AccountSuspendedError()
+        if standing.refusal is not None:
+            raise standing.refusal
         return standing
 
     def require_space(
@@ -90,7 +107,7 @@ class QuotaPolicy:
         """Whether the account can receive ``extra_bytes`` from someone else."""
         standing = self.standing(session, user_id, now)
         return (
-            standing.active
+            standing.refusal is None
             and not standing.full  # a full mailbox takes nothing, not even 0 bytes (RCPT)
             and standing.stored_bytes + extra_bytes <= standing.quota_bytes
         )

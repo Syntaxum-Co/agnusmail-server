@@ -1,9 +1,9 @@
 """Tests for CSRF protection."""
 
 import pytest
-from agnusmail.apps.api.middleware.csrf import origin_of, trusted_origins
 from fastapi.testclient import TestClient
 
+from agnusmail.apps.api.middleware.csrf import origin_of, trusted_origins
 from agnusmail.core.config import Settings
 from tests.unit.fakes import make_app, make_settings
 

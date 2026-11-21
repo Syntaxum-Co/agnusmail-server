@@ -12,10 +12,10 @@ from typing import Any
 import pytest
 from fastapi.testclient import TestClient
 
-from tests.openpgp_helpers import DeviceKeys
-from tests.unit.auth_helpers import LoggedIn, login
-from tests.unit.device_helpers import key_payload, next_version, onboard, wallet_certificate
-from tests.unit.fakes import make_app
+from agnusmail.testing.auth import LoggedIn, login
+from agnusmail.testing.devices import key_payload, next_version, onboard, wallet_certificate
+from agnusmail.testing.fakes import make_app
+from agnusmail.testing.openpgp import DeviceKeys
 
 DEVICES = "/v1/devices"
 

@@ -118,6 +118,17 @@ ADMIN_TABLE_PRIVILEGES: dict[str, tuple[str, ...]] = {
     "admin_signatures": ("SELECT", "INSERT"),
 }
 DEFAULT_ADMIN_ROLE = "agnusmail_admin"
+# Every table Agnusmail itself creates: extensions may never grant privileges on these.
+BUILT_IN_TABLES = frozenset(
+    {
+        *RUNTIME_TABLE_PRIVILEGES,
+        *GATEWAY_TABLE_PRIVILEGES,
+        *OUTBOUND_TABLE_PRIVILEGES,
+        *ADMIN_TABLE_PRIVILEGES,
+        *OWNER_ONLY_TABLES,
+        *ADMIN_ONLY_TABLES,
+    }
+)
 
 ROLE_NAME = re.compile(r"^[a-z_][a-z0-9_]{0,62}$")
 DEFAULT_RUNTIME_ROLE = "agnusmail_app"

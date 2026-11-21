@@ -18,6 +18,7 @@ from email.utils import format_datetime
 
 from sqlalchemy.orm import Session
 
+from agnusmail import extensions
 from agnusmail.core.config import Settings
 from agnusmail.core.exceptions import ResourceNotFoundError
 from agnusmail.core.logging import get_logger
@@ -68,7 +69,7 @@ class GatewayContext:
             chain_id=settings.siwe_chain_id,
             max_message_bytes=settings.max_message_bytes,
             signing_key=signing_key,
-            quota=QuotaPolicy.from_settings(settings),
+            quota=extensions.from_settings(settings).quota_policy(settings),
         )
 
 

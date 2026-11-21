@@ -33,11 +33,13 @@ def get_by_id(session: Session, user_id: uuid.UUID) -> User | None:
     return session.get(User, user_id)
 
 
-def register_login(session: Session, address: str, now: datetime) -> User:
+def register_login(session: Session, address: str, now: datetime) -> tuple[User, bool]:
     """Create the user on first login (idempotent and race-safe) and stamp the login.
+    Returns the user and whether this login created it.
 
     Uses INSERT ... ON CONFLICT DO NOTHING on the unique address, so concurrent first
-    logins of the same address converge on a single row instead of failing.
+    logins of the same address converge on a single row instead of failing. Only the
+    login whose insert created the row sees ``created``.
     """
     normalized = normalize_address(address)
     values = {"id": uuid.uuid4(), "ethereum_address": normalized}
@@ -58,5 +60,6 @@ def register_login(session: Session, address: str, now: datetime) -> User:
     else:  # pragma: no cover - only PostgreSQL (prod) and SQLite (unit tests) are supported
         raise RuntimeError(f"unsupported database dialect: {dialect}")
     user = session.scalars(select(User).where(User.ethereum_address == normalized)).one()
+    created = user.id == values["id"]
     user.last_login_at = now
-    return user
+    return user, created

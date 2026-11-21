@@ -14,10 +14,10 @@ from agnusmail.modules.audit.models import AuditEvent
 from agnusmail.modules.authentication.device_binding import revoke_sessions_of
 from agnusmail.modules.authentication.stores import DEVICE_CHALLENGE_PREFIX
 from agnusmail.modules.devices.models import Device, DeviceStatus
-from tests.openpgp_helpers import DeviceKeys, new_device
-from tests.unit.auth_helpers import LoggedIn, login
-from tests.unit.device_helpers import DEVICES, Onboarded, onboard
-from tests.unit.fakes import FakeAsyncRedis, make_app, make_session_factory
+from agnusmail.testing.auth import LoggedIn, login
+from agnusmail.testing.devices import DEVICES, Onboarded, onboard
+from agnusmail.testing.fakes import FakeAsyncRedis, make_app, make_session_factory
+from agnusmail.testing.openpgp import DeviceKeys, new_device
 
 CHALLENGE = "/v1/auth/device/challenge"
 BIND = "/v1/auth/device/bind"

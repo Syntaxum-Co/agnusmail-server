@@ -147,6 +147,15 @@ fingerprints, times, sizes and delivery state. See [THREAT_MODEL.md](THREAT_MODE
 - Limits against mass sign-up: new accounts per IP and day, device registrations per
   account and day.
 
+### Extensions
+
+- Extensions ([docs/extensions.md](docs/extensions.md)) are loaded only from the explicit
+  `AGNUSMAIL_EXTENSIONS` list, never discovered automatically. They run with each
+  process's privileges, so only list code you trust.
+- An extension can add tables, routes, jobs and admin actions, but it cannot change the
+  privileges of a built-in table, replace a built-in admin action or field, or bypass the
+  database roles: Agnusmail refuses to start if it tries.
+
 ### Secrets and logs
 
 - No secret in the code or in the image; configuration comes from the environment at

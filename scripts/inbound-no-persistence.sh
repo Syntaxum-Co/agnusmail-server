@@ -52,7 +52,7 @@ set -- $(docker inspect -f '{{.HostConfig.ReadonlyRootfs}} {{.HostConfig.Memory}
 [ "$1" = true ] && ok "read-only root filesystem" || fail "root filesystem is writable"
 [ "$2" -gt 0 ] && [ "$2" = "$3" ] && ok "no swap (memory $2 = memory+swap $3)" || fail "swap allowed ($2/$3)"
 # The gateway's PID (PID 1 is the init process, see compose "init: true").
-PID=$(docker exec "$GATEWAY" sh -c 'for d in /proc/[0-9]*; do [ "$(tr "\000" " " < "$d/cmdline" 2>/dev/null)" = "python -m apps.smtp_inbound " ] && echo "${d#/proc/}"; done' | head -n 1)
+PID=$(docker exec "$GATEWAY" sh -c 'for d in /proc/[0-9]*; do [ "$(tr "\000" " " < "$d/cmdline" 2>/dev/null)" = "python -m agnusmail.apps.smtp_inbound " ] && echo "${d#/proc/}"; done' | head -n 1)
 [ -n "$PID" ] && [ "$PID" != 1 ] && ok "gateway runs as PID $PID under an init" || fail "gateway PID '$PID'"
 if docker exec "$GATEWAY" cat "/proc/$PID/environ" >/dev/null 2>&1; then
   fail "gateway is dumpable (its /proc files are readable by its own user)"

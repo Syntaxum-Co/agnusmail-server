@@ -2,7 +2,7 @@
 
 from fastapi.testclient import TestClient
 
-from tests.unit.fakes import make_app, make_settings
+from agnusmail.testing.fakes import make_app, make_settings
 
 
 def client_for(**overrides: object) -> TestClient:

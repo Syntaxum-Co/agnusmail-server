@@ -19,8 +19,8 @@ from agnusmail.modules.passkeys.wallet import (
     PasskeyRegistrationClaim,
     passkey_registration_typed_data,
 )
-from tests.unit.auth_helpers import LoggedIn, login
-from tests.unit.fakes import make_app, make_session_factory, make_settings
+from agnusmail.testing.auth import LoggedIn, login
+from agnusmail.testing.fakes import make_app, make_session_factory, make_settings
 from tests.webauthn_helpers import SoftAuthenticator
 
 BASE = "/v1/auth/passkeys"

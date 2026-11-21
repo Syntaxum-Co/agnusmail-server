@@ -13,7 +13,7 @@ from agnusmail.core.exceptions import (
 )
 from agnusmail.infrastructure.database.transaction import run_in_transaction, run_sync_transaction
 from agnusmail.modules.identity.models import User
-from tests.unit.fakes import make_session_factory
+from agnusmail.testing.fakes import make_session_factory
 
 
 def test_missing_factory_is_503() -> None:

@@ -30,7 +30,7 @@ from agnusmail.modules.admin.signing import (
 )
 from agnusmail.modules.audit.models import AuditEvent
 from agnusmail.modules.identity.models import User
-from tests.unit.fakes import make_session_factory, make_settings
+from agnusmail.testing.fakes import make_session_factory, make_settings
 
 SETTINGS = make_settings()
 

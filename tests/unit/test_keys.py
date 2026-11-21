@@ -12,9 +12,8 @@ from fastapi.testclient import TestClient
 
 from agnusmail.modules.authentication import dependencies
 from agnusmail.modules.identity.models import User, UserStatus
-from tests.openpgp_helpers import DIRECT_KEY, b64, new_device, tamper_signature
-from tests.unit.auth_helpers import LoggedIn, login
-from tests.unit.device_helpers import (
+from agnusmail.testing.auth import LoggedIn, login
+from agnusmail.testing.devices import (
     DEVICES,
     FORMAT,
     add_key,
@@ -23,7 +22,8 @@ from tests.unit.device_helpers import (
     onboard,
     wallet_certificate,
 )
-from tests.unit.fakes import make_app, make_session_factory, make_settings
+from agnusmail.testing.fakes import make_app, make_session_factory, make_settings
+from agnusmail.testing.openpgp import DIRECT_KEY, b64, new_device, tamper_signature
 
 
 @pytest.fixture

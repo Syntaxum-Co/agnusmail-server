@@ -1,5 +1,5 @@
 version = 1
-revision = 5
+revision = 3
 requires-python = "==3.13.*"
 
 [[package]]
@@ -29,6 +29,12 @@ dependencies = [
     { name = "webauthn" },
 ]
 
+[package.optional-dependencies]
+testing = [
+    { name = "httpx2" },
+    { name = "pytest" },
+]
+
 [package.dev-dependencies]
 dev = [
     { name = "httpx" },
@@ -53,11 +59,13 @@ requires-dist = [
     { name = "eth-account", specifier = ">=0.13" },
     { name = "fastapi", specifier = ">=0.115" },
     { name = "httptools", specifier = ">=0.6" },
+    { name = "httpx2", marker = "extra == 'testing'", specifier = ">=0.1" },
     { name = "prometheus-client", specifier = "==0.26.0" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.2" },
     { name = "pydantic", specifier = ">=2.9" },
     { name = "pydantic-settings", specifier = ">=2.6" },
     { name = "pysequoia", specifier = "==0.1.35" },
+    { name = "pytest", marker = "extra == 'testing'", specifier = ">=8.3" },
     { name = "redis", specifier = ">=5.2" },
     { name = "sqlalchemy", specifier = ">=2.0.36" },
     { name = "structlog", specifier = ">=24.5" },
@@ -65,6 +73,7 @@ requires-dist = [
     { name = "uvloop", marker = "sys_platform != 'win32'", specifier = ">=0.21" },
     { name = "webauthn", specifier = ">=3.0.1,<4" },
 ]
+provides-extras = ["testing"]
 
 [package.metadata.requires-dev]
 dev = [

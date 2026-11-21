@@ -8,8 +8,8 @@ Nothing here can read message content: the actions work on account metadata only
 
 import re
 import uuid
-from collections.abc import Callable
-from dataclasses import dataclass
+from collections.abc import Callable, Mapping, Sequence
+from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
@@ -17,6 +17,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from agnusmail.core.exceptions import AgnusmailError, InvalidStateError, ResourceNotFoundError
+from agnusmail.extensions import AccountDetails, Extensions
 from agnusmail.modules.abuse.models import AbuseReport, AccountRestriction
 from agnusmail.modules.addresses.models import MailAddress
 from agnusmail.modules.addresses.service import resolve
@@ -63,6 +64,10 @@ class ActionInvalidError(AgnusmailError):
 class Context:
     policy: QuotaPolicy
     mail_domain: str
+    # The change kinds operators may request: the built-in ones plus the extensions'.
+    changes: Mapping[str, "Kind"] = field(default_factory=lambda: CHANGES)
+    # Extra fields of ``show_account``, from extensions.
+    account_details: Sequence[AccountDetails] = ()
 
 
 def _account(session: Session, value: Any, ctx: Context, *, lock: bool = False) -> User:
@@ -203,10 +208,17 @@ CHANGES: dict[str, Kind] = {
 }
 
 
+def changes_for(extensions: Extensions) -> dict[str, Kind]:
+    """The built-in changes plus the extensions' (which may also name more credentials)."""
+    credentials = extensions.admin_credentials(CREDENTIALS)
+    rotation = Kind({"credential": lambda v: v in credentials}, _rotation)
+    return extensions.admin_actions({**CHANGES, "record_rotation": rotation})
+
+
 def validate(kind: str, params: dict[str, Any], ctx: Context) -> dict[str, Any]:
-    spec = CHANGES.get(kind)
+    spec = ctx.changes.get(kind)
     if spec is None:
-        raise ActionInvalidError(f"unknown action; one of {sorted(CHANGES)}")
+        raise ActionInvalidError(f"unknown action; one of {sorted(ctx.changes)}")
     if set(params) != set(spec.params) or not all(
         check(params[name]) for name, check in spec.params.items()
     ):
@@ -256,7 +268,7 @@ def approve(
     action.approved_by, action.approved_at = operator, now
     try:
         with session.begin_nested():
-            action.result = CHANGES[action.kind].execute(session, action, ctx, now)
+            action.result = ctx.changes[action.kind].execute(session, action, ctx, now)
             action.status = ActionStatus.EXECUTED
     except AgnusmailError as exc:
         action.status = ActionStatus.FAILED
@@ -312,7 +324,7 @@ def show_account(session: Session, account: str, ctx: Context, now: datetime) ->
         .select_from(Device)
         .where(Device.user_id == user.id, Device.status == DeviceStatus.ACTIVE)
     )
-    return {
+    details: dict[str, Any] = {
         "account": user.ethereum_address,
         "user_status": user.status,
         "created_at": user.created_at.isoformat(),
@@ -327,6 +339,12 @@ def show_account(session: Session, account: str, ctx: Context, now: datetime) ->
         "reporters_last_30_days": int(reports or 0),
         "active_devices": int(devices or 0),
     }
+    for extra in ctx.account_details:
+        added = extra(session, user, now)
+        if set(added) & set(details):  # an extension never hides or replaces a field
+            raise ActionInvalidError("an extension reused a built-in account field")
+        details.update(added)
+    return details
 
 
 def list_pending(session: Session, now: datetime) -> list[dict[str, Any]]:

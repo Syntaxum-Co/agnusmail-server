@@ -17,9 +17,9 @@ from agnusmail.modules.attachments.models import Attachment
 from agnusmail.modules.messages.models import Message, MessageKey
 from agnusmail.modules.quotas.models import AccountUsage
 from agnusmail.modules.quotas.usage import exact_usage, recompute, stored_bytes
-from tests.unit.fakes import FakeObjectStorage, make_app, make_session_factory
+from agnusmail.testing.fakes import FakeObjectStorage, make_app, make_session_factory
+from agnusmail.testing.people import MESSAGES, Person, compose, person, send
 from tests.unit.test_attachments import complete, send_with, upload
-from tests.unit.test_messages import MESSAGES, Person, compose, person, send
 
 
 @pytest.fixture

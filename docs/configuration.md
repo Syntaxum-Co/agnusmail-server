@@ -27,6 +27,12 @@ Outside `local`, the processes refuse to start unless:
 - the SMTP services also have their keys, TLS files, Rspamd and process hardening (see
   below).
 
+## Extensions
+
+| Variable | Default | Notes |
+|---|---|---|
+| `EXTENSIONS` | `[]` | JSON list of `"package.module:attribute"` to load in every process. See [extensions.md](extensions.md). Extensions run with full privileges: only list code you trust. |
+
 ## Required
 
 | Variable | Notes |

@@ -15,8 +15,8 @@ from agnusmail.modules.addresses import rules
 from agnusmail.modules.audit.models import AuditEvent
 from agnusmail.modules.authentication import dependencies
 from agnusmail.modules.identity.models import User, UserStatus
-from tests.unit.auth_helpers import LoggedIn, login
-from tests.unit.fakes import make_app, make_session_factory, make_settings
+from agnusmail.testing.auth import LoggedIn, login
+from agnusmail.testing.fakes import make_app, make_session_factory, make_settings
 
 ADDRESSES = "/v1/addresses"
 RESOLVE = "/v1/directory/addresses"

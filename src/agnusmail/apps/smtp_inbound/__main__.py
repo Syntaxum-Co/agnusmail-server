@@ -1,8 +1,8 @@
 """Inbound SMTP gateway entry point.
 
-- ``python -m apps.smtp_inbound``: serve. Requires the signing key
+- ``python -m agnusmail.apps.smtp_inbound``: serve. Requires the signing key
   (``AGNUSMAIL_INBOUND_SIGNING_KEY_FILE``); publishes its certificate before listening.
-- ``python -m apps.smtp_inbound generate-key <path> [--if-missing]``: create a signing
+- ``python -m agnusmail.apps.smtp_inbound generate-key <path> [--if-missing]``: create a signing
   key file (mode 0600, never overwritten) and print its fingerprint.
 
 A separate process from the API. Messages stay in memory: the process is made
@@ -138,7 +138,7 @@ def run() -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="python -m apps.smtp_inbound")
+    parser = argparse.ArgumentParser(prog="python -m agnusmail.apps.smtp_inbound")
     commands = parser.add_subparsers(dest="command")
     generate = commands.add_parser("generate-key", help="create a gateway signing key file")
     generate.add_argument("path", type=Path)

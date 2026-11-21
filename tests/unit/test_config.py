@@ -6,7 +6,7 @@ import pytest
 from pydantic import ValidationError
 
 from agnusmail.core.config import Environment, Settings
-from tests.unit.fakes import make_settings
+from agnusmail.testing.fakes import make_settings
 
 TLS_DSN = "postgresql+psycopg://user:pass@db:5432/agnusmail?sslmode=verify-full"
 DEPLOYED: dict[str, Any] = {

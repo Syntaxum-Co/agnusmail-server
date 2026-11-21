@@ -7,6 +7,10 @@ the previous one (``chain.py``), so rewriting or dropping events is detectable.
 
 ``details`` holds only non-secret metadata (states, versions, formats, content digests,
 hashed client fingerprint). Never key material, tokens or message content.
+
+The valid event types are rows of ``audit_event_types``: migrations insert the built-in
+ones, and an extension's migrations insert its own. An unknown type is refused by the
+foreign key.
 """
 
 import uuid
@@ -26,7 +30,9 @@ from sqlalchemy import (
     String,
     UniqueConstraint,
     Uuid,
+    event,
     func,
+    insert,
 )
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
@@ -74,7 +80,18 @@ class AuditEventType(StrEnum):
     PORTAL_DELETED = "portal.deleted"
 
 
-EVENT_TYPES_SQL = ", ".join(f"'{event.value}'" for event in AuditEventType)
+class AuditEventTypeName(Base):
+    """One allowed ``audit_events.event_type``."""
+
+    __tablename__ = "audit_event_types"
+
+    name: Mapped[str] = mapped_column(String(48), primary_key=True)
+
+
+@event.listens_for(AuditEventTypeName.__table__, "after_create")
+def _insert_built_in_types(target: Any, connection: Any, **_: Any) -> None:
+    """A schema built from the models (unit tests) gets the same rows as the migrations."""
+    connection.execute(insert(target), [{"name": kind.value} for kind in AuditEventType])
 
 
 class AuditEvent(Base):
@@ -92,7 +109,9 @@ class AuditEvent(Base):
     actor_user_id: Mapped[uuid.UUID | None] = mapped_column(
         Uuid, ForeignKey("users.id", ondelete="RESTRICT")
     )
-    event_type: Mapped[str] = mapped_column(String(48), nullable=False)
+    event_type: Mapped[str] = mapped_column(
+        String(48), ForeignKey("audit_event_types.name", ondelete="RESTRICT"), nullable=False
+    )
     device_id: Mapped[uuid.UUID | None] = mapped_column(
         Uuid, ForeignKey("devices.id", ondelete="RESTRICT")
     )
@@ -112,7 +131,6 @@ class AuditEvent(Base):
     event_hash: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
 
     __table_args__ = (
-        CheckConstraint(f"event_type IN ({EVENT_TYPES_SQL})", name="event_type_valid"),
         CheckConstraint("chain_seq >= 1", name="chain_seq_positive"),
         CheckConstraint("length(prev_hash) = 32", name="prev_hash_length"),
         CheckConstraint("length(event_hash) = 32", name="event_hash_length"),

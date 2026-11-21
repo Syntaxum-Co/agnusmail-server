@@ -9,7 +9,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 import pytest
-from apps.smtp_outbound.__main__ import register_queue_key
+from agnusmail.apps.smtp_outbound.__main__ import register_queue_key
 from fastapi.testclient import TestClient
 from sqlalchemy import select
 from sqlalchemy.orm import Session, sessionmaker

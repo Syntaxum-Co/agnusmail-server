@@ -39,4 +39,4 @@ uv run pytest -m integration     # with the compose services (see README.md)
 - Keep pull requests focused on one change and describe how you tested it.
 
 By contributing, you agree that your contributions are licensed under the
-[AGPL-3.0-only](LICENSE) license of the project.
+[Apache-2.0](LICENSE) license of the project.

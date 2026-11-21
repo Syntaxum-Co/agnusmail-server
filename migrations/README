@@ -1,0 +1,1 @@
+Alembic migrations. Run with `uv run alembic upgrade head` (needs AGNUSMAIL_DATABASE_URL).

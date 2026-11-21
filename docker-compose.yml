@@ -1,0 +1,253 @@
+# Local development and testing only (see README.md). Every published port binds to
+# 127.0.0.1. Not a production deployment: see docs/self-hosting.md.
+#
+#   cp .env.example .env
+#   docker compose up -d                          # PostgreSQL, Redis, S3, Rspamd
+#   docker compose --profile app up -d --build    # + API, worker and SMTP services
+
+# Fixed project name: networks and volumes are agnusmail_*, whatever the checkout's name.
+name: agnusmail
+
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: ${AGNUSMAIL_DB_USER:-agnusmail}
+      POSTGRES_PASSWORD: ${AGNUSMAIL_DB_PASSWORD:?set AGNUSMAIL_DB_PASSWORD}
+      POSTGRES_DB: ${AGNUSMAIL_DB_NAME:-agnusmail}
+    ports:
+      - "127.0.0.1:5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7
+    ports:
+      - "127.0.0.1:6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # S3-compatible storage for attachments in development/tests. MinIO no longer
+  # publishes community images; SeaweedFS (Apache-2.0) implements the S3 API we use.
+  # Dev-only credentials in docker/seaweedfs/s3.json.
+  object-storage:
+    image: chrislusf/seaweedfs:4.51
+    command: ["server", "-dir=/data", "-s3", "-s3.port=8333", "-s3.config=/etc/seaweedfs/s3.json"]
+    ports:
+      - "127.0.0.1:8333:8333"
+    volumes:
+      - ./docker/seaweedfs/s3.json:/etc/seaweedfs/s3.json:ro
+      - s3data:/data
+    # Presigned URLs name http://s3.localhost:8333. Browsers resolve *.localhost to
+    # 127.0.0.1 (the published port); containers resolve it to this service.
+    networks:
+      default:
+        aliases: ["s3.localhost"]
+
+  # Antispam for the inbound gateway. Keeps nothing and sends nothing derived from
+  # message content to third parties: see docker/rspamd/README.md. Internal network
+  # only (no published port).
+  rspamd:
+    image: rspamd/rspamd:4.2.3
+    volumes:
+      - ./docker/rspamd/local.d:/etc/rspamd/local.d:ro
+      - ./docker/rspamd/override.d:/etc/rspamd/override.d:ro
+    healthcheck:
+      # The normal worker answers GET /ping with "pong" (the image has no curl).
+      test:
+        - CMD
+        - bash
+        - -c
+        - "exec 3<>/dev/tcp/127.0.0.1/11333 && printf 'GET /ping HTTP/1.0\\r\\n\\r\\n' >&3 && grep -q pong <&3"
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  # ---------------------------------------------------------------------------------
+  # The whole stack: docker compose --profile app up -d --build
+  # A web client (e.g. Vite on http://127.0.0.1:5173) proxies /v1 to :8000.
+  # Development only: environment "local", owner DB role, dev-only S3 credentials.
+  # ---------------------------------------------------------------------------------
+  migrate:
+    profiles: ["app"]
+    build: { context: ., dockerfile: docker/Dockerfile }
+    image: agnusmail-api:dev
+    env_file: .env
+    entrypoint: ["sh", "/dev-scripts/with-db-url.sh"]
+    command: ["alembic", "upgrade", "head"]
+    volumes:
+      - ./docker/dev:/dev-scripts:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: "no"
+
+  s3-init:
+    profiles: ["app"]
+    image: agnusmail-api:dev
+    env_file: .env
+    environment: &dev-app-env
+      AGNUSMAIL_ENVIRONMENT: local
+      AGNUSMAIL_REDIS_URL: redis://redis:6379/0
+      # SIWE and passkeys are bound to the page the user is on (the Vite origin).
+      AGNUSMAIL_SIWE_DOMAIN: ${DEV_FRONTEND_HOST:-127.0.0.1:5173}
+      AGNUSMAIL_SIWE_URI: ${DEV_FRONTEND_ORIGIN:-http://127.0.0.1:5173}
+      AGNUSMAIL_CORS_ALLOWED_ORIGINS: '["${DEV_FRONTEND_ORIGIN:-http://127.0.0.1:5173}"]'
+      AGNUSMAIL_SIWE_CHAIN_ID: ${DEV_SIWE_CHAIN_ID:-1}
+      # Secure portal links: the web client's portal page; the token is the fragment.
+      AGNUSMAIL_PORTAL_BASE_URL: ${DEV_FRONTEND_ORIGIN:-http://127.0.0.1:5173}/portal
+      # "s3.localhost" works from the browser and from the containers (see object-storage).
+      AGNUSMAIL_OBJECT_STORAGE_ENDPOINT: http://s3.localhost:8333
+      AGNUSMAIL_OBJECT_STORAGE_BUCKET: agnusmail-dev
+      AGNUSMAIL_OBJECT_STORAGE_ACCESS_KEY: agnusmail-dev
+      AGNUSMAIL_OBJECT_STORAGE_SECRET_KEY: agnusmail-dev-only-not-a-secret
+      DEV_FRONTEND_ORIGINS: ${DEV_FRONTEND_ORIGIN:-http://127.0.0.1:5173},http://localhost:5173
+    entrypoint: ["sh", "/dev-scripts/with-db-url.sh"]
+    command: ["python", "/dev-scripts/init_storage.py"]
+    volumes:
+      - ./docker/dev:/dev-scripts:ro
+    depends_on:
+      object-storage:
+        condition: service_started
+    restart: "no"
+
+  api:
+    profiles: ["app"]
+    image: agnusmail-api:dev
+    env_file: .env
+    environment: *dev-app-env
+    entrypoint: ["sh", "/dev-scripts/with-db-url.sh"]
+    command: ["uvicorn", "apps.api.main:create_app", "--factory", "--host", "0.0.0.0", "--port", "8000"]
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - ./docker/dev:/dev-scripts:ro
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      s3-init:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+
+  worker:
+    profiles: ["app"]
+    image: agnusmail-api:dev
+    env_file: .env
+    environment: *dev-app-env
+    entrypoint: ["sh", "/dev-scripts/with-db-url.sh"]
+    command: ["python", "-m", "apps.worker"]
+    healthcheck:
+      disable: true
+    volumes:
+      - ./docker/dev:/dev-scripts:ro
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  # Inbound SMTP gateway. Local testing only: no STARTTLS certificate here.
+  # Try it: swaks --server 127.0.0.1:2525 --to name@<AGNUSMAIL_MAIL_DOMAIN>
+  smtp-inbound:
+    profiles: ["app"]
+    image: agnusmail-api:dev
+    env_file: .env
+    environment:
+      <<: *dev-app-env
+      AGNUSMAIL_INBOUND_SMTP_HOST: 0.0.0.0
+      AGNUSMAIL_INBOUND_SIGNING_KEY_FILE: /var/lib/agnusmail/gateway/signing-key.pgp
+      AGNUSMAIL_INBOUND_RSPAMD_URL: http://rspamd:11333
+    entrypoint: ["sh", "/dev-scripts/with-db-url.sh"]
+    # Development key, created once in its own volume (production: secret manager).
+    command:
+      - sh
+      - -c
+      - python -m apps.smtp_inbound generate-key "$$AGNUSMAIL_INBOUND_SIGNING_KEY_FILE" --if-missing && exec python -m apps.smtp_inbound
+    ports:
+      - "127.0.0.1:2525:2525"
+    healthcheck:
+      disable: true
+    # Nothing in clear may reach a disk: read-only root filesystem, no
+    # swap (memswap_limit = mem_limit), no capabilities. The process itself is made
+    # non-dumpable. Only the signing-key volume is writable (key created once).
+    read_only: true
+    init: true  # the gateway is not PID 1: crash signals reach it
+    mem_limit: 512m
+    memswap_limit: 512m
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - ./docker/dev:/dev-scripts:ro
+      - gateway-key:/var/lib/agnusmail/gateway
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      rspamd:
+        condition: service_healthy
+
+  # Outbound SMTP — NOT end-to-end encrypted. In development every
+  # message goes to mail-sink (which discards it), never to a real MX.
+  smtp-outbound:
+    profiles: ["app"]
+    image: agnusmail-api:dev
+    env_file: .env
+    environment:
+      <<: *dev-app-env
+      AGNUSMAIL_OUTBOUND_KEY_FILE: /var/lib/agnusmail/outbound/queue-key.pgp
+      AGNUSMAIL_OUTBOUND_DKIM_KEY_FILE: /var/lib/agnusmail/outbound/dkim.pem
+      AGNUSMAIL_OUTBOUND_RELAY: mail-sink:2526
+    entrypoint: ["sh", "/dev-scripts/with-db-url.sh"]
+    # Development keys, created once in their own volume (production: secret manager).
+    command:
+      - sh
+      - -c
+      - >-
+        python -m apps.smtp_outbound generate-key "$$AGNUSMAIL_OUTBOUND_KEY_FILE" --if-missing &&
+        python -m apps.smtp_outbound generate-dkim-key "$$AGNUSMAIL_OUTBOUND_DKIM_KEY_FILE" --if-missing &&
+        exec python -m apps.smtp_outbound
+    healthcheck:
+      disable: true
+    # Holds the queue key (the only decryption key) and decrypted messages in
+    # memory: same hardening as the inbound gateway.
+    read_only: true
+    init: true
+    mem_limit: 512m
+    memswap_limit: 512m
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - ./docker/dev:/dev-scripts:ro
+      - outbound-keys:/var/lib/agnusmail/outbound
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      mail-sink:
+        condition: service_started
+
+  # Stand-in for every recipient's server in development: accepts and discards.
+  mail-sink:
+    profiles: ["app"]
+    image: agnusmail-api:dev
+    command: ["python", "-m", "aiosmtpd", "-n", "-l", "0.0.0.0:2526", "-c", "aiosmtpd.handlers.Sink"]
+    healthcheck:
+      disable: true
+    read_only: true
+    cap_drop:
+      - ALL
+
+volumes:
+  gateway-key:
+  outbound-keys:
+  pgdata:
+  s3data:

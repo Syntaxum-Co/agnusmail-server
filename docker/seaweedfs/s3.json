@@ -1,0 +1,11 @@
+{
+  "identities": [
+    {
+      "name": "agnusmail-dev",
+      "credentials": [
+        {"accessKey": "agnusmail-dev", "secretKey": "agnusmail-dev-only-not-a-secret"}
+      ],
+      "actions": ["Read", "Write", "List", "Admin"]
+    }
+  ]
+}

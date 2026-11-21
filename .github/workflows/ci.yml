@@ -1,0 +1,158 @@
+name: CI
+
+permissions:
+  contents: read
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5
+        with:
+          enable-cache: true
+
+      - name: Sync dependencies (Python 3.13)
+        run: uv sync --locked
+
+      - name: Ruff lint
+        run: uv run ruff check .
+
+      - name: Ruff format check
+        run: uv run ruff format --check .
+
+      - name: Type check (mypy)
+        run: uv run mypy .
+
+      - name: Unit tests
+        run: uv run pytest tests/unit --cov --cov-report=term-missing
+
+  integration:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: agnusmail
+          POSTGRES_PASSWORD: "agnus%ci"  # "%" exercises the Alembic DSN escaping
+          POSTGRES_DB: agnusmail
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U agnusmail"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      AGNUSMAIL_ENVIRONMENT: local
+      AGNUSMAIL_DATABASE_URL: postgresql+psycopg://agnusmail:agnus%25ci@localhost:5432/agnusmail
+      AGNUSMAIL_REDIS_URL: redis://localhost:6379/0
+      AGNUSMAIL_TEST_S3_ENDPOINT: http://localhost:8333
+      AGNUSMAIL_TEST_RSPAMD_URL: http://127.0.0.1:11333
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      # S3-compatible storage for attachment tests (needs the repo's dev-only config file,
+      # so it starts after checkout instead of as a service container).
+      - name: Start SeaweedFS (S3)
+        run: |
+          docker run -d --name s3 -p 8333:8333             -v "$PWD/docker/seaweedfs/s3.json:/etc/seaweedfs/s3.json:ro"             chrislusf/seaweedfs:4.51 server -dir=/data -s3 -s3.port=8333             -s3.config=/etc/seaweedfs/s3.json
+          for i in $(seq 1 60); do curl -s -o /dev/null http://localhost:8333 && break; sleep 1; done
+
+      # Antispam for the inbound gateway with the project's configuration.
+      - name: Start Rspamd
+        run: |
+          docker run -d --name rspamd -p 127.0.0.1:11333:11333 \
+            -v "$PWD/docker/rspamd/local.d:/etc/rspamd/local.d:ro" \
+            -v "$PWD/docker/rspamd/override.d:/etc/rspamd/override.d:ro" \
+            rspamd/rspamd:4.2.3
+          for i in $(seq 1 90); do curl -fs http://127.0.0.1:11333/ping | grep -q pong && break; sleep 1; done
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5
+        with:
+          enable-cache: true
+
+      - name: Sync dependencies (Python 3.13)
+        run: uv sync --locked
+
+      - name: Migrations apply
+        run: uv run alembic upgrade head
+
+      - name: Integration tests
+        run: uv run pytest tests -m integration --cov --cov-report=term-missing
+
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - name: Build production image
+        run: docker build -f docker/Dockerfile -t agnusmail-api:ci .
+
+      - name: Image runs as non-root
+        run: test "$(docker run --rm --entrypoint id agnusmail-api:ci -u)" != "0"
+
+      - name: Smoke test (app starts, /healthz answers, HEALTHCHECK healthy)
+        run: |
+          docker run -d --name api -p 127.0.0.1:8000:8000 \
+            -e AGNUSMAIL_ENVIRONMENT=local \
+            -e AGNUSMAIL_DATABASE_URL=postgresql+psycopg://u:p@127.0.0.1:1/smoke \
+            -e AGNUSMAIL_REDIS_URL=redis://127.0.0.1:1/0 \
+            agnusmail-api:ci
+          for i in $(seq 1 30); do curl -fsS http://127.0.0.1:8000/healthz && break; sleep 1; done
+          curl -fsS http://127.0.0.1:8000/healthz
+          for i in $(seq 1 60); do
+            status=$(docker inspect -f '{{.State.Health.Status}}' api)
+            [ "$status" = "healthy" ] && exit 0
+            sleep 2
+          done
+          docker logs api
+          exit 1
+
+      - name: Migrations are packaged in the image
+        run: docker run --rm --entrypoint alembic agnusmail-api:ci heads
+
+  # Cross-library interoperability (protocol v1 §14): OpenPGP.js (web client role, built
+  # from a pinned commit in a throwaway container) <-> server validation + Sequoia.
+  interop:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: OpenPGP.js <-> Sequoia
+        run: sh scripts/interop-openpgpjs.sh
+
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Install uv
+        uses: astral-sh/setup-uv@d4b2f3b6ecc6e67c4457f6d3e41ec42d3d0fcb86 # v5
+        with:
+          enable-cache: true
+      - name: Sync dependencies
+        run: uv sync --locked
+      - name: pip-audit
+        run: uv run pip-audit

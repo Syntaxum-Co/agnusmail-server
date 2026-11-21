@@ -1,10 +1,10 @@
 """Administration CLI — run on the server, never exposed.
 
-    python -m apps.admin bootstrap-operator 0x...        # first two operators only
-    python -m apps.admin request suspend_account account=0x...   # or account=name@domain
-    python -m apps.admin approve <action-id>             # a different operator
-    python -m apps.admin show <account>                  # metadata, one operator
-    python -m apps.admin pending                          # pending actions, one operator
+    python -m agnusmail.apps.admin bootstrap-operator 0x...        # first two operators only
+    python -m agnusmail.apps.admin request suspend_account account=0x...   # or account=name@domain
+    python -m agnusmail.apps.admin approve <action-id>             # a different operator
+    python -m agnusmail.apps.admin show <account>                  # metadata, one operator
+    python -m agnusmail.apps.admin pending                          # pending actions, one operator
 
 Each command (except the bootstrap) prints a message; the operator signs it in their own
 wallet (``personal_sign``: MetaMask, hardware wallet, ``cast wallet sign``) and pastes
@@ -138,7 +138,7 @@ def run(
 
 
 def parser() -> argparse.ArgumentParser:
-    root = argparse.ArgumentParser(prog="python -m apps.admin")
+    root = argparse.ArgumentParser(prog="python -m agnusmail.apps.admin")
     commands = root.add_subparsers(dest="command", required=True)
     boot = commands.add_parser("bootstrap-operator")
     boot.add_argument("address")

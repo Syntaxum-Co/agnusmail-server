@@ -70,7 +70,7 @@ class Context:
     account_details: Sequence[AccountDetails] = ()
 
 
-def _account(session: Session, value: Any, ctx: Context, *, lock: bool = False) -> User:
+def find_account(session: Session, value: Any, ctx: Context, *, lock: bool = False) -> User:
     """The account named by a wallet address or an e-mail address. ``lock`` holds its
     row until the transaction ends (changes of its status)."""
     if not isinstance(value, str):
@@ -92,9 +92,10 @@ def _account(session: Session, value: Any, ctx: Context, *, lock: bool = False) 
     return user
 
 
-def _audit(
-    session: Session, user: User, kind: AuditEventType, action: AdminAction, now: datetime
+def record_admin_event(
+    session: Session, user: User, kind: AuditEventType | str, action: AdminAction, now: datetime
 ) -> None:
+    """Record an approved change in the account's audit chain, with both operators."""
     record_event(
         session,
         None,
@@ -113,27 +114,27 @@ def _audit(
 
 
 def _suspend(session: Session, action: AdminAction, ctx: Context, now: datetime) -> dict[str, Any]:
-    user = _account(session, action.params["account"], ctx, lock=True)
+    user = find_account(session, action.params["account"], ctx, lock=True)
     if user.status == UserStatus.SUSPENDED:
         raise InvalidStateError("the account is already suspended")
     user.status = UserStatus.SUSPENDED
-    _audit(session, user, AuditEventType.ADMIN_SUSPENDED, action, now)
+    record_admin_event(session, user, AuditEventType.ADMIN_SUSPENDED, action, now)
     return {"account": user.ethereum_address, "status": "suspended"}
 
 
 def _reinstate(
     session: Session, action: AdminAction, ctx: Context, now: datetime
 ) -> dict[str, Any]:
-    user = _account(session, action.params["account"], ctx, lock=True)
+    user = find_account(session, action.params["account"], ctx, lock=True)
     if user.status != UserStatus.SUSPENDED:
         raise InvalidStateError("the account is not suspended")
     user.status = UserStatus.ACTIVE
-    _audit(session, user, AuditEventType.ADMIN_REINSTATED, action, now)
+    record_admin_event(session, user, AuditEventType.ADMIN_REINSTATED, action, now)
     return {"account": user.ethereum_address, "status": "active"}
 
 
 def _lift(session: Session, action: AdminAction, ctx: Context, now: datetime) -> dict[str, Any]:
-    user = _account(session, action.params["account"], ctx)
+    user = find_account(session, action.params["account"], ctx)
     row = session.get(AccountRestriction, user.id, with_for_update=True)
     if (
         row is None
@@ -142,7 +143,7 @@ def _lift(session: Session, action: AdminAction, ctx: Context, now: datetime) ->
         raise InvalidStateError("the account is not restricted")
     row.restricted_until = now
     row.updated_at = now
-    _audit(session, user, AuditEventType.ADMIN_RESTRICTION_LIFTED, action, now)
+    record_admin_event(session, user, AuditEventType.ADMIN_RESTRICTION_LIFTED, action, now)
     return {"account": user.ethereum_address, "restricted": False}
 
 
@@ -311,7 +312,7 @@ def bootstrap(session: Session, address: str, now: datetime) -> Operator:
 
 def show_account(session: Session, account: str, ctx: Context, now: datetime) -> dict[str, Any]:
     """Account metadata for support: never content, keys or message lists."""
-    user = _account(session, account, ctx)
+    user = find_account(session, account, ctx)
     standing = ctx.policy.standing(session, user.id, now)
     restriction = session.get(AccountRestriction, user.id)
     reports = session.scalar(

@@ -153,6 +153,8 @@ docker/            container image and development configuration
 - [docs/configuration.md](docs/configuration.md) — every setting
 - [docs/self-hosting.md](docs/self-hosting.md) — running it beyond your laptop
 - [docs/extensions.md](docs/extensions.md) — adding features without forking
+- [docs/maintaining.md](docs/maintaining.md) — branch protection and releases
+- [CHANGELOG.md](CHANGELOG.md) — what changed in each release
 
 ## Security
 

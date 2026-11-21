@@ -86,7 +86,7 @@ async def test_session_store_lifecycle_and_limit(redis_client: aredis.Redis) -> 
 def test_siwe_login_end_to_end(settings: Settings) -> None:
     from eth_account import Account
 
-    from tests.unit.test_auth import build_message, sign
+    from agnusmail.testing.auth import build_message, sign
 
     acct = Account.create()
     with TestClient(create_app(settings)) as client:

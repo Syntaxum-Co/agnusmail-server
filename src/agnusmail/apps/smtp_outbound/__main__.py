@@ -1,10 +1,10 @@
 """Outbound SMTP service entry point (protocol v1 §10) — NOT E2EE.
 
-- ``python -m apps.smtp_outbound``: deliver the queue. Publishes its queue certificate
+- ``python -m agnusmail.apps.smtp_outbound``: deliver the queue. Publishes its queue certificate
   before starting.
-- ``python -m apps.smtp_outbound generate-key <path> [--if-missing]``: queue key file.
-- ``python -m apps.smtp_outbound generate-dkim-key <path> [--if-missing]``: DKIM key.
-- ``python -m apps.smtp_outbound dns-records``: the SPF, DKIM and DMARC records to
+- ``python -m agnusmail.apps.smtp_outbound generate-key <path> [--if-missing]``: queue key file.
+- ``python -m agnusmail.apps.smtp_outbound generate-dkim-key <path> [--if-missing]``: DKIM key.
+- ``python -m agnusmail.apps.smtp_outbound dns-records``: the SPF, DKIM and DMARC records to
   publish for the mail domain.
 
 It holds the backend's only decryption key (the queue key): the process
@@ -200,7 +200,7 @@ def dns_records(settings: Settings) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="python -m apps.smtp_outbound")
+    parser = argparse.ArgumentParser(prog="python -m agnusmail.apps.smtp_outbound")
     commands = parser.add_subparsers(dest="command")
     for name in ("generate-key", "generate-dkim-key"):
         command = commands.add_parser(name)

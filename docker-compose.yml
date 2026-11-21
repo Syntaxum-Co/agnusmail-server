@@ -125,7 +125,7 @@ services:
     env_file: .env
     environment: *dev-app-env
     entrypoint: ["sh", "/dev-scripts/with-db-url.sh"]
-    command: ["uvicorn", "apps.api.main:create_app", "--factory", "--host", "0.0.0.0", "--port", "8000"]
+    command: ["uvicorn", "agnusmail.apps.api.main:create_app", "--factory", "--host", "0.0.0.0", "--port", "8000"]
     ports:
       - "127.0.0.1:8000:8000"
     volumes:
@@ -144,7 +144,7 @@ services:
     env_file: .env
     environment: *dev-app-env
     entrypoint: ["sh", "/dev-scripts/with-db-url.sh"]
-    command: ["python", "-m", "apps.worker"]
+    command: ["python", "-m", "agnusmail.apps.worker"]
     healthcheck:
       disable: true
     volumes:
@@ -169,7 +169,7 @@ services:
     command:
       - sh
       - -c
-      - python -m apps.smtp_inbound generate-key "$$AGNUSMAIL_INBOUND_SIGNING_KEY_FILE" --if-missing && exec python -m apps.smtp_inbound
+      - python -m agnusmail.apps.smtp_inbound generate-key "$$AGNUSMAIL_INBOUND_SIGNING_KEY_FILE" --if-missing && exec python -m agnusmail.apps.smtp_inbound
     ports:
       - "127.0.0.1:2525:2525"
     healthcheck:
@@ -211,9 +211,9 @@ services:
       - sh
       - -c
       - >-
-        python -m apps.smtp_outbound generate-key "$$AGNUSMAIL_OUTBOUND_KEY_FILE" --if-missing &&
-        python -m apps.smtp_outbound generate-dkim-key "$$AGNUSMAIL_OUTBOUND_DKIM_KEY_FILE" --if-missing &&
-        exec python -m apps.smtp_outbound
+        python -m agnusmail.apps.smtp_outbound generate-key "$$AGNUSMAIL_OUTBOUND_KEY_FILE" --if-missing &&
+        python -m agnusmail.apps.smtp_outbound generate-dkim-key "$$AGNUSMAIL_OUTBOUND_DKIM_KEY_FILE" --if-missing &&
+        exec python -m agnusmail.apps.smtp_outbound
     healthcheck:
       disable: true
     # Holds the queue key (the only decryption key) and decrypted messages in

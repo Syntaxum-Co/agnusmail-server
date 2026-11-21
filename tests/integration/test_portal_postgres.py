@@ -15,7 +15,7 @@ from datetime import UTC, datetime, timedelta
 
 import pysequoia
 import pytest
-from apps.smtp_outbound.__main__ import register_queue_key
+from agnusmail.apps.smtp_outbound.__main__ import register_queue_key
 from fastapi.testclient import TestClient
 from sqlalchemy import Engine, update
 from sqlalchemy.exc import IntegrityError
@@ -110,7 +110,7 @@ def test_notice_link_access_and_reply(
     assert b"TEST-ONLY" not in notice.content  # the message never travels in the notice
     assert found_in_database(engine, token) == []  # only its hash is stored
 
-    from apps.api.main import create_app
+    from agnusmail.apps.api.main import create_app
 
     app = create_app(settings_env, session_factory=sessionmaker(bind=engine))
     with TestClient(app, raise_server_exceptions=False) as browser:

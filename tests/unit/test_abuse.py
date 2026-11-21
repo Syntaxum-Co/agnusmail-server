@@ -18,9 +18,9 @@ from agnusmail.modules.outbound.models import (
     OutboundRecipient,
     OutboundStatus,
 )
-from tests.unit.auth_helpers import login
-from tests.unit.fakes import make_app, make_session_factory, make_settings
-from tests.unit.test_messages import MESSAGES, Person, compose, person, send
+from agnusmail.testing.auth import login
+from agnusmail.testing.fakes import make_app, make_session_factory, make_settings
+from agnusmail.testing.people import MESSAGES, Person, compose, person, send
 
 
 @pytest.fixture
@@ -221,7 +221,7 @@ def test_device_registrations_per_day(factory: sessionmaker[Session]) -> None:
 def test_new_accounts_per_ip_per_day(factory: sessionmaker[Session]) -> None:
     from eth_account import Account
 
-    from tests.unit.test_auth import build_message, sign
+    from agnusmail.testing.auth import build_message, sign
 
     app = app_with(factory, new_accounts_per_ip_per_day=2, rate_limit_auth_per_ip=100)
     with TestClient(app, raise_server_exceptions=False) as client:

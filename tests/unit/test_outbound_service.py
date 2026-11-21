@@ -10,7 +10,7 @@ from typing import Any
 
 import pysequoia
 import pytest
-from apps.smtp_outbound import __main__ as service
+from agnusmail.apps.smtp_outbound import __main__ as service
 
 from agnusmail.core.config import Environment, Settings
 from agnusmail.infrastructure.openpgp import generate_gateway_key

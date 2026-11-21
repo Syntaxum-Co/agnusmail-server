@@ -25,7 +25,7 @@ from agnusmail.infrastructure.openpgp import (
 )
 from agnusmail.modules.authentication.device_binding import session_statement
 from agnusmail.modules.keys.policy import DeviceCertificatePolicy, RegistrationContext
-from tests.openpgp_helpers import DeviceKeys, new_device, split_packets
+from agnusmail.testing.openpgp import DeviceKeys, new_device, split_packets
 
 
 def prepare(directory: Path) -> None:

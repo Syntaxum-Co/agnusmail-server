@@ -14,7 +14,7 @@ from fastapi.testclient import TestClient
 from agnusmail.infrastructure.openpgp import pkesk_recipient
 from agnusmail.testing.auth import LoggedIn, login
 from agnusmail.testing.devices import Onboarded, onboard
-from agnusmail.testing.openpgp import DeviceKeys, decrypt_joined, encrypt_split
+from agnusmail.testing.openpgp import DeviceKeys, encrypt_split
 
 MESSAGES = "/v1/messages"
 PLAINTEXT = b"From: alice@example\r\nSubject: secret plans\r\n\r\nMeet at noon.\r\n"
@@ -87,19 +87,6 @@ def compose(
         "self_pkesks": [by_fpr[k["encryption_fingerprint"]] for k in own],
         "body": base64.b64encode(body).decode(),
     }
-
-
-def open_message(reader: Person, message_id: str, sender: Person) -> bytes:
-    data = reader.client.get(f"{MESSAGES}/{message_id}").json()
-    assert data["pkesks"], data
-    plaintext, signatures = decrypt_joined(
-        reader.keys,
-        base64.b64decode(data["pkesks"][0]),
-        base64.b64decode(data["body"]),
-        sender.keys.cert,
-    )
-    assert signatures == 1  # signed by the sender's device
-    return plaintext
 
 
 def send(sender: Person, payload: dict[str, Any]) -> Any:

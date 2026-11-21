@@ -11,11 +11,11 @@ its own PostgreSQL role.
 
 | Process | Command | Responsibility |
 |---|---|---|
-| API | `uvicorn apps.api.main:create_app --factory` | HTTP API under `/v1`: identity, sessions, devices, keys, messages, attachments, recovery, addresses, domains, portal, usage |
-| Worker | `python -m apps.worker` | Background jobs from a PostgreSQL queue (`jobs`): audit verification and purge, cleanup, queue and portal expiry, account migrations, usage recomputation, abuse evaluation |
-| Inbound SMTP | `python -m apps.smtp_inbound` | Receives external mail, runs antispam, encrypts it to the recipients' public keys and stores only ciphertext |
-| Outbound SMTP | `python -m apps.smtp_outbound` | Delivers mail to external servers (not end-to-end encrypted), signs it with DKIM |
-| Admin CLI | `python -m apps.admin` | Operator actions on account metadata, each change approved by a second operator |
+| API | `uvicorn agnusmail.apps.api.main:create_app --factory` | HTTP API under `/v1`: identity, sessions, devices, keys, messages, attachments, recovery, addresses, domains, portal, usage |
+| Worker | `python -m agnusmail.apps.worker` | Background jobs from a PostgreSQL queue (`jobs`): audit verification and purge, cleanup, queue and portal expiry, account migrations, usage recomputation, abuse evaluation |
+| Inbound SMTP | `python -m agnusmail.apps.smtp_inbound` | Receives external mail, runs antispam, encrypts it to the recipients' public keys and stores only ciphertext |
+| Outbound SMTP | `python -m agnusmail.apps.smtp_outbound` | Delivers mail to external servers (not end-to-end encrypted), signs it with DKIM |
+| Admin CLI | `python -m agnusmail.apps.admin` | Operator actions on account metadata, each change approved by a second operator |
 
 Backing services: **PostgreSQL** (all durable state), **Redis** (sessions, nonces,
 challenges, rate limits — nothing durable), **S3-compatible storage** (encrypted
@@ -24,13 +24,13 @@ attachments) and **Rspamd** (antispam for the inbound gateway).
 ## Code layout
 
 ```text
-apps/                     process entry points
-  api/                    FastAPI app factory, middleware, health routes
 src/agnusmail/
+  apps/                   process entry points
+    api/                  FastAPI app factory, middleware, health routes
   core/                   settings, logging (with redaction), errors, security helpers
   infrastructure/         database (sessions, roles), Redis, object storage, OpenPGP, metrics
   modules/<feature>/      models.py (tables), service.py (use cases), router.py (HTTP)
-migrations/versions/      Alembic migrations, applied in order
+  migrations/versions/    Alembic migrations, applied in order
 tests/unit/               fast tests (SQLite in memory, fake Redis and storage)
 tests/integration/        tests against real PostgreSQL, Redis, S3 and Rspamd
 ```

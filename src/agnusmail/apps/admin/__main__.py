@@ -26,13 +26,13 @@ from sqlalchemy.orm import Session, sessionmaker
 from agnusmail.core.config import Settings, get_settings
 from agnusmail.core.exceptions import AgnusmailError
 from agnusmail.core.logging import configure_logging
+from agnusmail.extensions import from_settings
 from agnusmail.infrastructure.database.roles import ADMIN_TABLE_PRIVILEGES, check_runtime_role
 from agnusmail.infrastructure.database.session import create_db_engine
 from agnusmail.modules import models as _all_models  # noqa: F401  (resolves every FK)
 from agnusmail.modules.admin import service
 from agnusmail.modules.admin.models import AdminAction
 from agnusmail.modules.admin.signing import Statement, authenticate
-from agnusmail.modules.quotas.policy import QuotaPolicy
 
 Reader = Callable[[str], str]
 Signer = Callable[[Statement], str]  # tests and automation: sign the exact statement
@@ -71,7 +71,13 @@ def run(
     read: Reader = input,
     signer: Signer | None = None,
 ) -> int:
-    ctx = service.Context(QuotaPolicy.from_settings(settings), settings.mail_domain)
+    extensions = from_settings(settings)
+    ctx = service.Context(
+        extensions.quota_policy(settings),
+        settings.mail_domain,
+        changes=service.changes_for(extensions),
+        account_details=extensions.admin_account_details(),
+    )
     domain = settings.siwe_domain
     now = datetime.now(UTC)
 
@@ -143,7 +149,7 @@ def parser() -> argparse.ArgumentParser:
     boot = commands.add_parser("bootstrap-operator")
     boot.add_argument("address")
     req = commands.add_parser("request")
-    req.add_argument("kind", choices=sorted(service.CHANGES))
+    req.add_argument("kind", help="the change, e.g. suspend_account (extensions add more)")
     req.add_argument("params", nargs="*", help="name=value")
     req.add_argument("--signature")
     app = commands.add_parser("approve")
@@ -163,9 +169,8 @@ def main(argv: list[str] | None = None) -> int:
     configure_logging(debug=False)
     engine = create_db_engine(settings)
     try:
-        check_runtime_role(
-            engine, strict=settings.environment != "local", allowed=ADMIN_TABLE_PRIVILEGES
-        )
+        allowed = from_settings(settings).privileges("admin", ADMIN_TABLE_PRIVILEGES)
+        check_runtime_role(engine, strict=settings.environment != "local", allowed=allowed)
         factory = sessionmaker(bind=engine, expire_on_commit=False)
         return run(args, settings, factory)
     except AgnusmailError as exc:

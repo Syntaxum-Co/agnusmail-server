@@ -100,13 +100,3 @@ def encrypt_split(
     )
     packets = split_packets(message)
     return packets[:-1], packets[-1]
-
-
-def decrypt_joined(
-    keys: DeviceKeys, pkesk: bytes, body: bytes, sender_cert: Any
-) -> tuple[bytes, int]:
-    """Client role: decrypt ``PKESK || body``; returns plaintext and valid signature count."""
-    result = pysequoia.decrypt(
-        decryptor=keys.tsk.decryptor(), bytes=pkesk + body, store=lambda _ids: [sender_cert]
-    )
-    return bytes(result.bytes or b""), len(list(result.valid_sigs))

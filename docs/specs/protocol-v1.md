@@ -451,7 +451,7 @@ to be invented.
   load proves that encrypting to the certificate fails). The signature is the one of §6.1:
   a signed message (one-pass + literal + v6 signature, SHA-512), then encrypted. The secret
   key comes from a file (`AGNUSMAIL_INBOUND_SIGNING_KEY_FILE`, created by
-  `python -m apps.smtp_inbound generate-key`, mode 0600, never overwritten).
+  `python -m agnusmail.apps.smtp_inbound generate-key`, mode 0600, never overwritten).
 - **Publication:** `GET /v1/gateway/keys` (public, no session) lists every certificate
   ever used, oldest first, and never deletes one: old messages stay verifiable after a key
   change. The gateway publishes its own certificate before accepting connections.
@@ -467,7 +467,7 @@ to be invented.
 
 ### 9.1 Receiving
 
-- A separate process (`python -m apps.smtp_inbound`, aiosmtpd), everything in memory; core
+- A separate process (`python -m agnusmail.apps.smtp_inbound`, aiosmtpd), everything in memory; core
   dumps are disabled at startup; aiosmtpd's `mail.log` logger stays at WARNING (at INFO it
   logs IPs and addresses; at DEBUG, every DATA line).
 - `RCPT`: only active addresses of the service. Unknown → `550 5.1.1`; after
@@ -606,7 +606,7 @@ to be invented.
 
 ### 10.2 Delivery
 
-- Service `apps/smtp_outbound`, with its own process and database role
+- Service `agnusmail.apps.smtp_outbound`, with its own process and database role
   (`OUTBOUND_TABLE_PRIVILEGES`: only the queue tables), non-dumpable, read-only container
   and no swap.
 - Claims with `FOR UPDATE SKIP LOCKED` and a lease; decrypts in memory; applies the policy
@@ -625,7 +625,7 @@ to be invented.
   (CHECK). The service itself expires messages on every round and the worker
   (`outbound.purge`, every 10 min) does the same while the service is stopped. Delivery
   records (addresses and codes) are deleted 30 days after they finish.
-- DNS records: `python -m apps.smtp_outbound dns-records` prints SPF, DKIM and DMARC
+- DNS records: `python -m agnusmail.apps.smtp_outbound dns-records` prints SPF, DKIM and DMARC
   (`p=reject`, strict alignment); the PTR of the outbound IP must point to
   `AGNUSMAIL_OUTBOUND_HOSTNAME`.
 

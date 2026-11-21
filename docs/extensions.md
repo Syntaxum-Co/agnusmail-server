@@ -64,14 +64,15 @@ second version location:
 
 1. Define the models on `agnusmail.infrastructure.database.base.Base`, in a module the
    extension imports (importing the extension registers them).
-2. Start the extension's migration history on Agnusmail's head, with its own branch label:
+2. Start the extension's migration history on an Agnusmail revision, as its own branch:
 
    ```python
    revision = "myext_0001"
-   down_revision = None
+   down_revision = "20261121_0027"  # the Agnusmail revision the tables need
    branch_labels = ("myext",)
-   depends_on = "20261121_0027"  # the Agnusmail revision the tables need
    ```
+
+   Later Agnusmail migrations continue their own line; `alembic upgrade heads` runs both.
 
 3. Point Alembic at both locations, in the extension's `alembic.ini`:
 

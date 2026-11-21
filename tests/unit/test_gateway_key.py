@@ -8,10 +8,10 @@ from typing import Any
 
 import pysequoia
 import pytest
-from agnusmail.apps.smtp_inbound.__main__ import main
 from fastapi.testclient import TestClient
 from pysequoia.packet import PacketPile, Tag
 
+from agnusmail.apps.smtp_inbound.__main__ import main
 from agnusmail.infrastructure.openpgp import (
     GatewayKeyRejectedError,
     generate_gateway_key,
@@ -104,9 +104,9 @@ def test_gateway_refuses_to_start_without_its_safeguards(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, missing: dict[str, Any], event: str
 ) -> None:
     """Outside local: antispam, STARTTLS and the signing key are mandatory."""
-    import agnusmail.apps.smtp_inbound.__main__ as entry
     from structlog.testing import capture_logs
 
+    import agnusmail.apps.smtp_inbound.__main__ as entry
     from tests.unit.fakes import make_settings
     from tests.unit.test_config import DEPLOYED
 

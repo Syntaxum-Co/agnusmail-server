@@ -68,7 +68,7 @@ packages = ["src/agnusmail"]
 [tool.ruff]
 line-length = 100
 target-version = "py313"
-src = ["src", "apps", "tests"]
+src = ["src", "tests"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "B", "UP", "S", "N"]
@@ -82,7 +82,7 @@ ignore = ["S101"]  # asserts are required in tests
 [tool.mypy]
 python_version = "3.13"
 strict = true
-files = ["src", "apps", "tests"]
+files = ["src", "tests"]
 explicit_package_bases = true
 mypy_path = "src"
 namespace_packages = true

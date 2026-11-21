@@ -30,11 +30,11 @@ from agnusmail.modules.outbound.models import OutboundMessage, OutboundStatus
 from agnusmail.modules.outbound.queue_key import generate_queue_key, load_queue_key
 from agnusmail.modules.portal.models import PortalMessage
 from agnusmail.modules.portal.service import purge_expired
+from agnusmail.testing.people import Person
 from tests.integration.test_inbound_no_plaintext import found_in_database
 from tests.integration.test_messages_postgres import live_person
 from tests.integration.test_outbound_postgres import sender_for
 from tests.outbound_helpers import TestMta
-from tests.unit.test_messages import Person
 from tests.unit.test_portal import PLAINTEXT, envelope
 
 pytestmark = pytest.mark.integration

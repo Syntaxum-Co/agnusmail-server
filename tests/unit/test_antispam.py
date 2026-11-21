@@ -25,6 +25,7 @@ from agnusmail.modules.inbound.antispam import (
 from agnusmail.modules.inbound.delivery import GatewayContext, register_gateway_key
 from agnusmail.modules.inbound.smtp import InboundHandler
 from agnusmail.modules.messages.models import Message
+from agnusmail.testing.people import person
 from tests.unit.test_inbound import (
     EXTERNAL,
     Gateway,
@@ -37,7 +38,6 @@ from tests.unit.test_inbound import (
     smtp,
     with_address,
 )
-from tests.unit.test_messages import person
 
 AUTH_RESULTS = b"mx.agnus.test;\r\n\tdkim=none;\r\n\tspf=pass smtp.mailfrom=someone@example.org"
 FORGED = (

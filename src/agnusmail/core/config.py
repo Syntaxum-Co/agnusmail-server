@@ -129,7 +129,7 @@ class Settings(BaseSettings):
     # Unknown recipients tolerated per connection before it is closed (enumeration).
     inbound_max_unknown_recipients: int = Field(default=5, ge=1, le=100)
     # Gateway signing key (spec §9): binary OpenPGP secret key file, mode 0600, from the
-    # secret manager. Create with ``python -m apps.smtp_inbound generate-key <path>``.
+    # secret manager. Create with ``python -m agnusmail.apps.smtp_inbound generate-key <path>``.
     inbound_signing_key_file: Path | None = None
     # Rspamd normal worker, internal network only: http://host:11333. Required
     # outside the local environment (the gateway refuses to start without it).
@@ -161,9 +161,9 @@ class Settings(BaseSettings):
     # Per account (Redis, fail-closed): messages per hour, recipients per day.
     outbound_messages_per_hour: int = Field(default=30, ge=1)
     outbound_recipients_per_day: int = Field(default=300, ge=1)
-    # Outbound service (``apps/smtp_outbound``, its own process and database role).
+    # Outbound service (``agnusmail.apps.smtp_outbound``, its own process and database role).
     # Queue key: binary OpenPGP secret key (device profile §3.1), mode 0600. Created with
-    # ``python -m apps.smtp_outbound generate-key <path>``. DKIM: RSA private key (PEM).
+    # ``python -m agnusmail.apps.smtp_outbound generate-key <path>``. DKIM: RSA private key (PEM).
     outbound_key_file: Path | None = None
     outbound_dkim_key_file: Path | None = None
     outbound_dkim_selector: str = Field(default="agnus1", pattern=r"^[a-z0-9]([a-z0-9-]{0,61})$")

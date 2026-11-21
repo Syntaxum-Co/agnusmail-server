@@ -33,7 +33,7 @@ from agnusmail.modules.keys.policy import (
     registration_statement,
 )
 from agnusmail.modules.keys.service import KeyLimits, register_key
-from tests.openpgp_helpers import new_device
+from agnusmail.testing.openpgp import new_device
 
 SERVICE = "app.agnusmail"
 
@@ -202,8 +202,8 @@ def test_device_and_directory_flow_through_the_api(settings_env: Settings) -> No
     from fastapi.testclient import TestClient
 
     from agnusmail.apps.api.main import create_app
-    from tests.unit.auth_helpers import login
-    from tests.unit.device_helpers import key_payload, wallet_certificate
+    from agnusmail.testing.auth import login
+    from agnusmail.testing.devices import key_payload, wallet_certificate
 
     cert = new_device()
     with TestClient(create_app(settings_env)) as client:

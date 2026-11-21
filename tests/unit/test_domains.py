@@ -9,11 +9,11 @@ from datetime import UTC, datetime
 from typing import Any
 
 import pytest
-from agnusmail.apps.smtp_outbound.__main__ import register_queue_key
 from fastapi.testclient import TestClient
 from sqlalchemy import select
 from sqlalchemy.orm import Session, sessionmaker
 
+from agnusmail.apps.smtp_outbound.__main__ import register_queue_key
 from agnusmail.modules.addresses.service import resolve
 from agnusmail.modules.audit.models import AuditEvent
 from agnusmail.modules.outbound.dkim import DkimSigner, generate_dkim_key

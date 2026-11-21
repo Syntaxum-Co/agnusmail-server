@@ -152,6 +152,7 @@ docker/            container image and development configuration
 - [docs/specs/audit-chain-v1.md](docs/specs/audit-chain-v1.md) — the per-user audit chain
 - [docs/configuration.md](docs/configuration.md) — every setting
 - [docs/self-hosting.md](docs/self-hosting.md) — running it beyond your laptop
+- [docs/extensions.md](docs/extensions.md) — adding features without forking
 
 ## Security
 

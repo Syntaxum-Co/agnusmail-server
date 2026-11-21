@@ -19,9 +19,9 @@ from agnusmail.modules.audit.models import AuditEvent
 from agnusmail.modules.outbound.dkim import DkimSigner, generate_dkim_key
 from agnusmail.modules.outbound.queue_key import generate_queue_key, load_queue_key
 from agnusmail.modules.outbound.sender import OutboundSender
-from tests.unit.auth_helpers import login
-from tests.unit.fakes import make_app, make_session_factory
-from tests.unit.test_messages import Person, person
+from agnusmail.testing.auth import login
+from agnusmail.testing.fakes import make_app, make_session_factory
+from agnusmail.testing.people import Person, person
 from tests.unit.test_outbound import OUTBOUND, claim, mime, submission
 from tests.unit.test_outbound_dkim import receiver_dns
 from tests.unit.test_outbound_sender import FakeTransport, QueueKeyAdapter

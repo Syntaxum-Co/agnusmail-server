@@ -11,10 +11,10 @@ from collections.abc import AsyncIterator
 
 import pytest
 import redis.asyncio as aredis
-from agnusmail.apps.api.main import create_app
 from fastapi.testclient import TestClient
 from sqlalchemy import text
 
+from agnusmail.apps.api.main import create_app
 from agnusmail.core.config import Settings
 from agnusmail.infrastructure.database.session import create_db_engine
 from agnusmail.infrastructure.redis.rate_limit import RateLimiter

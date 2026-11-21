@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from apps.api.main import create_app
+from agnusmail.apps.api.main import create_app
 from fastapi import FastAPI
 from sqlalchemy import Engine, create_engine, event
 from sqlalchemy.orm import Session, sessionmaker

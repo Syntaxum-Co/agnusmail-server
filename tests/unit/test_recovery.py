@@ -32,10 +32,11 @@ from agnusmail.modules.devices.attestation import (
 from agnusmail.modules.identity.models import User
 from agnusmail.modules.recovery.migration import complete_due_migrations, migration_statement
 from agnusmail.modules.recovery.service import RECOVERY_FORMAT, registration_statement
-from tests.openpgp_helpers import DeviceKeys, b64, decrypt_joined, new_device
-from tests.unit.auth_helpers import login
-from tests.unit.fakes import make_app, make_session_factory
-from tests.unit.test_messages import Person, compose, person
+from agnusmail.testing.auth import login
+from agnusmail.testing.fakes import make_app, make_session_factory
+from agnusmail.testing.openpgp import DeviceKeys, b64, new_device
+from agnusmail.testing.people import Person, compose, person
+from tests.client_decrypt import decrypt_joined
 
 SERVICE = "app.agnusmail"
 VECTORS = Path(__file__).resolve().parent.parent / "vectors"

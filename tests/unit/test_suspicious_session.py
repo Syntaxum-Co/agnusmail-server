@@ -13,8 +13,8 @@ from agnusmail.modules.authentication.suspicious import (
     fingerprint,
     network_of,
 )
-from tests.unit.fakes import FakeAsyncRedis, make_app, make_settings
-from tests.unit.test_auth import build_message, sign
+from agnusmail.testing.auth import build_message, sign
+from agnusmail.testing.fakes import FakeAsyncRedis, make_app, make_settings
 
 SESSION = "/v1/auth/session"
 UA_A = {"User-Agent": "BrowserA/1.0"}

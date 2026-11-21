@@ -35,7 +35,7 @@ from agnusmail.modules.inbound.antispam import (
 )
 from agnusmail.modules.inbound.delivery import Arrival, GatewayContext, header_safe
 from agnusmail.modules.inbound.smtp import InboundHandler
-from tests.unit.fakes import make_session_factory, make_settings
+from agnusmail.testing.fakes import make_session_factory, make_settings
 from tests.unit.test_inbound import DOMAIN, Gateway
 
 FIELD_NAMES = st.sampled_from(["x-spam", "authentication-results", "subject", "x-other"])

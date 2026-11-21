@@ -71,7 +71,7 @@ def test_strict_mode_refuses_a_privileged_role(monkeypatch: pytest.MonkeyPatch) 
 
 
 def test_api_startup_runs_the_role_check(monkeypatch: pytest.MonkeyPatch) -> None:
-    from apps.api import main as api_main
+    from agnusmail.apps.api import main as api_main
 
     calls: list[bool] = []
 

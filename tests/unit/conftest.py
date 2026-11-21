@@ -4,7 +4,7 @@ from collections.abc import Iterator
 import pytest
 from hypothesis import settings
 
-from tests.unit.fakes import dispose_test_engines
+from agnusmail.testing.fakes import dispose_test_engines
 
 # Fuzzing depth: the default keeps the suite fast; HYPOTHESIS_PROFILE=deep for a long run.
 settings.register_profile("default", max_examples=100)

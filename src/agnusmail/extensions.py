@@ -131,13 +131,16 @@ class Extensions:
         self, role: str, base: Mapping[str, tuple[str, ...]]
     ) -> dict[str, tuple[str, ...]]:
         """``base`` plus the extensions' tables for ``role``. Extensions may only add
-        tables: one that touches a table Agnusmail decides is refused."""
+        their own tables: any table Agnusmail knows (in any role's map, owner-only or
+        admin-only) is refused, so no extension can widen a built-in role."""
+        from agnusmail.infrastructure.database.roles import BUILT_IN_TABLES
+
         if role not in ROLES:
             raise ExtensionError(f"unknown role {role!r}")
         merged = dict(base)
         for extension in self.items:
             for table, privileges in extension.table_privileges.get(role, {}).items():
-                if table in merged:
+                if table in merged or table in BUILT_IN_TABLES:
                     raise ExtensionError(
                         f"{extension.name}: privileges on {table!r} are already decided"
                     )

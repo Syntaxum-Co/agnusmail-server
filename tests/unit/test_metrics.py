@@ -12,8 +12,8 @@ from typing import Any
 from prometheus_client import REGISTRY, CollectorRegistry, generate_latest
 
 from agnusmail.infrastructure.metrics import DatabaseGauges, start_metrics
-from tests.unit.fakes import make_app, make_session_factory, make_settings
-from tests.unit.test_messages import compose, person, send
+from agnusmail.testing.fakes import make_app, make_session_factory, make_settings
+from agnusmail.testing.people import compose, person, send
 
 FORBIDDEN = {
     "wallet address": re.compile(r"0x[0-9a-fA-F]{40}"),

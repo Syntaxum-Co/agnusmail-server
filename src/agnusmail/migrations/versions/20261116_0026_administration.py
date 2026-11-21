@@ -5,8 +5,7 @@ Revises: 20261113_0024
 Create Date: 2026-11-16
 
 - operators, admin_actions, admin_signatures (admin role only; see roles.py).
-- audit event types 'admin.suspended', 'admin.reinstated', 'admin.restriction_lifted',
-  'admin.period_granted'.
+- audit event types 'admin.suspended', 'admin.reinstated', 'admin.restriction_lifted'.
 """
 
 from collections.abc import Sequence

@@ -24,6 +24,7 @@ from pathlib import Path
 from sqlalchemy import select
 from sqlalchemy.orm import Session, sessionmaker
 
+from agnusmail import extensions
 from agnusmail.core.config import Settings, get_settings
 from agnusmail.core.logging import configure_logging, get_logger
 from agnusmail.infrastructure.database.roles import OUTBOUND_TABLE_PRIVILEGES, check_runtime_role
@@ -146,7 +147,11 @@ def run() -> int:
     engine = create_db_engine(settings)
     try:
         check_runtime_role(
-            engine, strict=settings.environment != "local", allowed=OUTBOUND_TABLE_PRIVILEGES
+            engine,
+            strict=settings.environment != "local",
+            allowed=extensions.from_settings(settings).privileges(
+                "outbound", OUTBOUND_TABLE_PRIVILEGES
+            ),
         )
         factory = sessionmaker(bind=engine, expire_on_commit=False)
         with factory() as session, session.begin():

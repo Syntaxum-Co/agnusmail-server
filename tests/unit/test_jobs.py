@@ -29,7 +29,7 @@ from agnusmail.modules.jobs.queue import (
     reap_expired,
 )
 from agnusmail.modules.jobs.worker import Worker
-from tests.unit.fakes import make_session_factory, make_settings
+from agnusmail.testing.fakes import make_session_factory, make_settings
 
 NOW = datetime(2026, 11, 12, 12, 0, tzinfo=UTC)
 CALLS: list[tuple[str, dict[str, Any]]] = []

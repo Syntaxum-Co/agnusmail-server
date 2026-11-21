@@ -2,7 +2,7 @@
 # Build: docker build -f docker/Dockerfile -t agnusmail-api .
 # Config is provided at RUNTIME only; never bake secrets into the image.
 
-FROM python:3.13-slim AS builder
+FROM python:3.15-slim AS builder
 
 # uv installer, pinned (same version used to produce uv.lock).
 COPY --from=ghcr.io/astral-sh/uv:0.13.7 /uv /usr/local/bin/uv
@@ -22,7 +22,7 @@ COPY src ./src
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --locked --no-dev --no-editable
 
-FROM python:3.13-slim
+FROM python:3.15-slim
 
 # Non-root user with a fixed UID/GID, so mounted key files can be owned by it.
 RUN groupadd -r -g 10001 app && useradd -r -u 10001 -g app -d /app -s /usr/sbin/nologin app

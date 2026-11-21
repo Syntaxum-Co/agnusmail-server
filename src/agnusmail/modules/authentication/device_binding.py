@@ -1,4 +1,4 @@
-"""Binding a session to a device (protocol v1 §5, 4.D.5).
+"""Binding a session to a device (protocol v1 §5).
 
 1. ``POST /v1/auth/device/challenge`` — 32 random bytes, tied to the session, single use,
    valid for 120 s; the response carries the exact statement to sign.

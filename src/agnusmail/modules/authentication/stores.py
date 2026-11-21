@@ -200,7 +200,7 @@ class SessionStore:
         return SessionStore._digest(token)
 
     async def bind_device(self, token: str, device_id: str) -> bool:
-        """Record the device in the session (4.D.5) and index the session by device so a
+        """Record the device in the session and index the session by device so a
         device revocation can revoke its sessions. False if the session is gone."""
         digest = self._digest(token)
         key = self._data_key(digest)

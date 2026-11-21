@@ -1,4 +1,4 @@
-"""Public key directory API with protocol v1 device certificates (4.D.1–4.D.3)."""
+"""Public key directory API with protocol v1 device certificates."""
 
 import json
 import secrets

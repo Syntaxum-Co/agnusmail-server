@@ -75,7 +75,7 @@ class PublicKey(Base):
     )
     superseded_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    # Protocol v1 (4.D.2): v6 fingerprints (lowercase hex) of the primary key and of the
+    # Protocol v1: v6 fingerprints (lowercase hex) of the primary key and of the
     # signing and encryption subkeys, plus the certificate's expiry. NULL only on rows
     # registered before migration 0007 (interim opaque material).
     fingerprint: Mapped[str | None] = mapped_column(String(FINGERPRINT_LENGTH))

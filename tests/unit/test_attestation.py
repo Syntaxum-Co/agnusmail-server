@@ -1,4 +1,4 @@
-"""EIP-712 wallet attestations of devices (4.D.4, protocol v1 §4)."""
+"""EIP-712 wallet attestations of devices (protocol v1 §4)."""
 
 import dataclasses
 from datetime import UTC, datetime, timedelta

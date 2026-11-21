@@ -5,7 +5,7 @@ exist and a device owned by someone else are indistinguishable (404), so device 
 cannot be probed (anti-IDOR / anti-enumeration).
 
 Trust: a device becomes active only with an EIP-712 DeviceCertificate signed by the
-account's wallet over the v6 fingerprint of its primary key (protocol v1 §4, 4.D.4).
+account's wallet over the v6 fingerprint of its primary key (protocol v1 §4).
 """
 
 import uuid
@@ -146,7 +146,7 @@ def authorize_device(
     wallet: WalletContext,
     now: datetime,
 ) -> Device:
-    """Trust the device with a wallet-signed DeviceCertificate (4.D.4), or renew it.
+    """Trust the device with a wallet-signed DeviceCertificate, or renew it.
 
     The certificate binds the v6 fingerprint fixed by the device's first OpenPGP
     certificate, so the device must have registered one. Renewal (active device) needs

@@ -1,4 +1,4 @@
-"""Tests for user registration (3.3.x) and the initial migration (1.2.9)."""
+"""Tests for user registration and the initial migration."""
 
 import io
 import uuid

@@ -1,4 +1,4 @@
-"""Tests for suspicious-session detection (3.2.8)."""
+"""Tests for suspicious-session detection."""
 
 import json
 

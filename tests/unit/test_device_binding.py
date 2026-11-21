@@ -1,4 +1,4 @@
-"""Sessions bound to devices (4.D.5, protocol v1 §5)."""
+"""Sessions bound to devices (protocol v1 §5)."""
 
 import asyncio
 import base64

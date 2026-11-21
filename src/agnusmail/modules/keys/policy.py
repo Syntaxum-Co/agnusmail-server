@@ -6,9 +6,9 @@ Order of the checks (cheapest first):
 3. a textual guard against obvious private-key encodings (PEM/OpenSSH/PGP armor/PuTTY/
    JWK) — accepting one by mistake would break the guarantee that the server never
    holds private keys;
-4. structural validation of the OpenPGP v6 certificate (4.D.1) and its v6 fingerprint
-   (4.D.2) — ``infrastructure/openpgp.py``;
-5. proof of possession (4.D.3): a detached signature by the certificate's signing subkey
+4. structural validation of the OpenPGP v6 certificate and its v6 fingerprint
+   (``infrastructure/openpgp.py``);
+5. proof of possession: a detached signature by the certificate's signing subkey
    over a statement that names the service, the account and the fingerprint, so the
    proof cannot be replayed under another account or service.
 """

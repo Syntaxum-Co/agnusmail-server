@@ -1,4 +1,4 @@
-"""audit event type 'auth.session_bound' (4.D.5)
+"""audit event type 'auth.session_bound'
 
 Revision ID: 20261112_0009
 Revises: 20261112_0008

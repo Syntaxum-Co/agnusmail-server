@@ -1,4 +1,4 @@
-"""wallet-signed EIP-712 device certificates and revocations (4.D.4)
+"""wallet-signed EIP-712 device certificates and revocations
 
 Revision ID: 20261112_0008
 Revises: 20261112_0007

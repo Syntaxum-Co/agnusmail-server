@@ -56,10 +56,10 @@ class Device(Base):
     authorized_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     revocation_reason: Mapped[str | None] = mapped_column(String(REVOCATION_REASON_MAX_LENGTH))
-    # v6 fingerprint of the device's primary key, fixed by its first certificate (4.D.2).
+    # v6 fingerprint of the device's primary key, fixed by its first certificate.
     # Globally unique: one certificate cannot stand for two devices.
     fingerprint: Mapped[str | None] = mapped_column(String(64), unique=True)
-    # EIP-712 DeviceCertificate signed by the account's wallet (4.D.4): published with the
+    # EIP-712 DeviceCertificate signed by the account's wallet: published with the
     # keys so senders can verify it themselves. Hex "0x" + 65 bytes.
     certificate_signature: Mapped[str | None] = mapped_column(String(132))
     certificate_issued_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

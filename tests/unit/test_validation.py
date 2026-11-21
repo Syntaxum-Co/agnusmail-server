@@ -1,4 +1,4 @@
-"""Tests for strict input validation (2.1.10)."""
+"""Tests for strict input validation."""
 
 from collections.abc import Iterable, Iterator
 from typing import Any

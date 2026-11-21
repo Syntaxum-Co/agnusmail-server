@@ -164,7 +164,7 @@ async def revoke_device(
             )
         ),
     )
-    await revoke_sessions_of(request, device_id)  # 4.D.5: sessions bound to it end now
+    await revoke_sessions_of(request, device_id)  # sessions bound to it end now
     return revoked
 
 

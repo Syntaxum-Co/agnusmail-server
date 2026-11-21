@@ -1,4 +1,4 @@
-"""Per-user hash chain of the audit trail (4.3.2)."""
+"""Per-user hash chain of the audit trail."""
 
 import dataclasses
 import importlib.util

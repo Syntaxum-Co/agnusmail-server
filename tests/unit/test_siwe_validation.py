@@ -1,4 +1,4 @@
-"""Unit tests for the strict EIP-4361 parser and temporal checks (3.1.6-3.1.9)."""
+"""Unit tests for the strict EIP-4361 parser and temporal checks."""
 
 from datetime import UTC, datetime, timedelta
 

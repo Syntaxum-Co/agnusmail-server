@@ -1,4 +1,4 @@
-"""Structural checks of message parts without decryption (5.1, protocol v1 §6.2)."""
+"""Structural checks of message parts without decryption (protocol v1 §6.2)."""
 
 from datetime import UTC, datetime
 

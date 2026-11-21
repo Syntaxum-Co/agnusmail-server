@@ -1,4 +1,4 @@
-"""No plaintext of external mail persists .
+"""No plaintext of external mail persists.
 
 A random marker goes in the envelope sender, Subject and body of messages sent through
 the gateway (in-process, real PostgreSQL + Redis, and Rspamd when configured). Then every

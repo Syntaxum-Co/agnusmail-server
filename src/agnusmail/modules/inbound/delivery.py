@@ -85,7 +85,7 @@ class MessageTooLargeError(Exception):
 
 
 class MailboxFullError(RecipientUnavailableError):
-    """No active period, or storage full: temporary, the sender retries."""
+    """Account suspended, or storage full: temporary, the sender retries."""
 
 
 @dataclass(frozen=True)

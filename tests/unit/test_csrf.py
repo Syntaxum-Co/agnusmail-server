@@ -1,4 +1,4 @@
-"""Tests for CSRF protection (2.1.5)."""
+"""Tests for CSRF protection."""
 
 import pytest
 from apps.api.middleware.csrf import origin_of, trusted_origins

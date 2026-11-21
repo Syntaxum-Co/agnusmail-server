@@ -1,4 +1,4 @@
-"""Database role separation (4.3.4): units that need no PostgreSQL."""
+"""Database role separation: units that need no PostgreSQL."""
 
 from typing import Any
 

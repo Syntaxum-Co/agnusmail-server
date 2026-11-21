@@ -4,8 +4,8 @@
   comes online), attested by the wallet. One active per account; replaced, never deleted.
 - ``recovery_backups``: the recovery secret key, encrypted on the client with the
   24-word phrase (SKESK v6 Argon2 + SEIPDv2). The server stores it and never decrypts.
-- ``account_migrations``: moving the account to a new wallet after losing the old one
- , with a 7-day waiting period during which the owner can cancel.
+- ``account_migrations``: moving the account to a new wallet after losing the old one,
+  with a 7-day waiting period during which the owner can cancel.
 """
 
 import uuid

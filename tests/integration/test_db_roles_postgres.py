@@ -1,4 +1,4 @@
-"""Owner vs runtime PostgreSQL roles (4.3.4).
+"""Owner vs runtime PostgreSQL roles.
 
 The test database user (owner, superuser in CI) provisions a runtime role, then every
 check runs over a connection AS that runtime role. Roles are cluster-wide: the role is

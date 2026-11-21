@@ -1,4 +1,4 @@
-"""Device certificate policy (4.D.1-4.D.3): checks before and around OpenPGP parsing."""
+"""Device certificate policy: checks before and around OpenPGP parsing."""
 
 import hashlib
 import json

@@ -1,4 +1,4 @@
-"""Suspicious-session detection (3.2.8).
+"""Suspicious-session detection.
 
 At login the session stores a hashed client fingerprint:
 - ``ua``: SHA-256 of the User-Agent header;

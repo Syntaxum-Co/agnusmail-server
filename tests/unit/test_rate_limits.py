@@ -1,4 +1,4 @@
-"""Tests for per-route (login) and per-user rate limits (2.2.2)."""
+"""Tests for per-route (login) and per-user rate limits."""
 
 from eth_account import Account
 from fastapi.testclient import TestClient

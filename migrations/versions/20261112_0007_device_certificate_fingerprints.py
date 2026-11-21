@@ -1,4 +1,4 @@
-"""v6 fingerprints and expiry of device certificates (4.D.1-4.D.3)
+"""v6 fingerprints and expiry of device certificates
 
 Revision ID: 20261112_0007
 Revises: 20261112_0006

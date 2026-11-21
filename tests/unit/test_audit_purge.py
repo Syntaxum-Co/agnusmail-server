@@ -1,4 +1,4 @@
-"""Retention purge and full verification of the audit chain (4.3.3).
+"""Retention purge and full verification of the audit chain.
 
 SQLite has no triggers: these tests cover the application logic. The database-side
 rules (purge mode, 365-day floor, checkpoint) are covered by the PostgreSQL tests.

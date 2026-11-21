@@ -1,4 +1,4 @@
-"""Wallet attestations over EIP-712 typed data (protocol v1 §4, 4.D.4).
+"""Wallet attestations over EIP-712 typed data (protocol v1 §4).
 
 The account's wallet signs a ``DeviceCertificate`` binding the v6 fingerprint of a
 device's primary key to the account address, and may sign a ``DeviceRevocation``.

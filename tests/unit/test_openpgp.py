@@ -1,4 +1,4 @@
-"""Device certificate validation and signature verification (4.D.1–4.D.3)."""
+"""Device certificate validation and signature verification."""
 
 from datetime import UTC, datetime, timedelta
 from typing import Any

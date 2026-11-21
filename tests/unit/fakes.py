@@ -2,12 +2,12 @@
 
 from typing import Any
 
-from agnusmail.apps.api.main import create_app
 from fastapi import FastAPI
 from sqlalchemy import Engine, create_engine, event
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import StaticPool
 
+from agnusmail.apps.api.main import create_app
 from agnusmail.core.config import Settings
 from agnusmail.infrastructure.database.base import Base
 from agnusmail.modules import models as _all_models  # noqa: F401  (registers every table)

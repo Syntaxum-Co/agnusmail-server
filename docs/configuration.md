@@ -121,7 +121,7 @@ browsers upload and download directly.
 |---|---|---|
 | `INBOUND_SMTP_HOST` / `INBOUND_SMTP_PORT` | `127.0.0.1` / `2525` | |
 | `INBOUND_SMTP_HOSTNAME` | — | The MX name (greeting, `Received`). |
-| `INBOUND_SIGNING_KEY_FILE` | — | Created by `python -m apps.smtp_inbound generate-key <path>`; mode 0600. Required. |
+| `INBOUND_SIGNING_KEY_FILE` | — | Created by `python -m agnusmail.apps.smtp_inbound generate-key <path>`; mode 0600. Required. |
 | `INBOUND_TLS_CERT_FILE` / `INBOUND_TLS_KEY_FILE` | — | PEM; required outside `local`. |
 | `INBOUND_RSPAMD_URL` | — | `http://host:11333`, internal network; required outside `local`. |
 | `INBOUND_RSPAMD_TIMEOUT_SECONDS` | `30` | |
@@ -137,9 +137,9 @@ browsers upload and download directly.
 
 | Variable | Default | Notes |
 |---|---|---|
-| `OUTBOUND_KEY_FILE` | — | Queue key, created by `python -m apps.smtp_outbound generate-key <path>`; mode 0600. |
+| `OUTBOUND_KEY_FILE` | — | Queue key, created by `python -m agnusmail.apps.smtp_outbound generate-key <path>`; mode 0600. |
 | `OUTBOUND_PREVIOUS_KEY_FILES` | `[]` | Old queue keys, kept 72 h after a rotation. |
-| `OUTBOUND_DKIM_KEY_FILE` | — | Created by `python -m apps.smtp_outbound generate-dkim-key <path>`. |
+| `OUTBOUND_DKIM_KEY_FILE` | — | Created by `python -m agnusmail.apps.smtp_outbound generate-dkim-key <path>`. |
 | `OUTBOUND_DKIM_SELECTOR` | `agnus1` | |
 | `OUTBOUND_HOSTNAME` | — | EHLO name, with matching A/AAAA and PTR. Required outside `local`. |
 | `OUTBOUND_SMTP_PORT` | `25` | |

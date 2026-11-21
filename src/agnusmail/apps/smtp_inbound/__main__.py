@@ -21,6 +21,7 @@ from pathlib import Path
 
 from sqlalchemy.orm import Session, sessionmaker
 
+from agnusmail import extensions
 from agnusmail.core.config import Settings, get_settings
 from agnusmail.core.logging import configure_logging, get_logger
 from agnusmail.infrastructure.database.roles import (
@@ -125,7 +126,11 @@ def run() -> int:
     engine = create_db_engine(settings)
     try:
         check_runtime_role(
-            engine, strict=settings.environment != "local", allowed=GATEWAY_TABLE_PRIVILEGES
+            engine,
+            strict=settings.environment != "local",
+            allowed=extensions.from_settings(settings).privileges(
+                "gateway", GATEWAY_TABLE_PRIVILEGES
+            ),
         )
         factory = sessionmaker(bind=engine, expire_on_commit=False)
         with factory() as session, session.begin():

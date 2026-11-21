@@ -21,8 +21,8 @@ from agnusmail.modules.identity.models import User
 from agnusmail.modules.jobs.handlers import JOBS, SCHEDULE, Periodic
 from agnusmail.modules.jobs.queue import JobSpec
 from agnusmail.modules.quotas.policy import QuotaPolicy
-from tests.unit.auth_helpers import login
-from tests.unit.fakes import make_app, make_session_factory, make_settings
+from agnusmail.testing.auth import login
+from agnusmail.testing.fakes import make_app, make_session_factory, make_settings
 
 # --- a small example extension -------------------------------------------------------
 

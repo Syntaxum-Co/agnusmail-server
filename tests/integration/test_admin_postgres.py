@@ -6,7 +6,7 @@ import secrets
 from collections.abc import Iterator
 
 import pytest
-from apps.admin import __main__ as cli
+from agnusmail.apps.admin import __main__ as cli
 from eth_account import Account
 from sqlalchemy import Engine, create_engine, make_url, text
 from sqlalchemy.exc import DBAPIError

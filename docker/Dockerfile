@@ -29,10 +29,9 @@ RUN groupadd -r -g 10001 app && useradd -r -u 10001 -g app -d /app -s /usr/sbin/
 
 WORKDIR /app
 COPY --from=builder --chown=app:app /app/.venv /app/.venv
-COPY --chown=app:app apps /app/apps
-# Migrations ship with the image so the one-shot `migrate` service can run them.
+# The code and its migrations are in the venv (the agnusmail package); alembic.ini points
+# at them so a one-shot `alembic upgrade head` container can migrate.
 COPY --chown=app:app alembic.ini /app/alembic.ini
-COPY --chown=app:app migrations /app/migrations
 
 # Inbound gateway signing key: a private directory the volume inherits.
 RUN install -d -o app -g app -m 700 /var/lib/agnusmail/gateway

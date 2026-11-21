@@ -7,7 +7,7 @@ from fastapi.routing import APIRoute
 from fastapi.testclient import TestClient
 from pydantic import BaseModel
 
-from tests.unit.fakes import make_app
+from agnusmail.testing.fakes import make_app
 
 VERIFY = "/v1/auth/siwe/verify"
 

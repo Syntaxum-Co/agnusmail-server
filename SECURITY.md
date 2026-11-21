@@ -53,6 +53,8 @@ fingerprints, times, sizes and delivery state. See [THREAT_MODEL.md](THREAT_MODE
   revocation.
 - Suspicious-session detection: a session presented with another User-Agent than the
   one that logged in is revoked.
+- Suspending an account (admin CLI, two operators) refuses its logins and ends its open
+  sessions on their next request.
 - Optional passkey login (WebAuthn): phishing-resistant, user verification required,
   signature counter checked. Each passkey is approved by the wallet (EIP-712); the wallet
   is still required to authorize devices.

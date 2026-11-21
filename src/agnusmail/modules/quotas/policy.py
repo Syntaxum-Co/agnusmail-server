@@ -13,15 +13,9 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from agnusmail.core.config import Settings
-from agnusmail.core.exceptions import AgnusmailError
+from agnusmail.core.exceptions import AccountSuspendedError, AgnusmailError
 from agnusmail.modules.identity.models import User, UserStatus
 from agnusmail.modules.quotas.usage import lock_usage, stored_bytes
-
-
-class AccountSuspendedError(AgnusmailError):
-    status_code = 403
-    message = "account suspended"
-    code = "ACCOUNT_SUSPENDED"
 
 
 class QuotaExceededError(AgnusmailError):

@@ -307,7 +307,9 @@ def test_directory_lookup_rules() -> None:
         with factory() as session, session.begin():
             row = session.query(User).filter_by(ethereum_address=owner.address.lower()).one()
             row.status = UserStatus.SUSPENDED
-        assert directory(client, owner.address) == []  # suspended accounts are not published
+        with TestClient(app, raise_server_exceptions=False) as other:
+            login(other)  # the suspended owner's own session has ended
+            assert directory(other, owner.address) == []  # suspended: not published
 
 
 def test_audit_never_contains_key_material(client: TestClient, user: LoggedIn) -> None:

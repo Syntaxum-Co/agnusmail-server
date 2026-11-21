@@ -38,6 +38,12 @@ class NotAuthenticatedError(AgnusmailError):
     code = "NO_SESSION"
 
 
+class AccountSuspendedError(AgnusmailError):
+    status_code = 403
+    message = "account suspended"
+    code = "ACCOUNT_SUSPENDED"
+
+
 class SessionRevokedError(AgnusmailError):
     """The session was revoked because it was used in a suspicious way."""
 

@@ -11,10 +11,14 @@ from dataclasses import dataclass
 from typing import Annotated
 
 from fastapi import Depends, Request
+from fastapi.concurrency import run_in_threadpool
+from sqlalchemy import select
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session, sessionmaker
 
 from agnusmail.core.config import Settings
 from agnusmail.core.exceptions import (
+    AccountSuspendedError,
     NotAuthenticatedError,
     RateLimitedError,
     ReauthenticationRequiredError,
@@ -27,6 +31,7 @@ from agnusmail.modules.audit.service import ActorContext
 from agnusmail.modules.authentication.audit import audit_session_event
 from agnusmail.modules.authentication.stores import SessionRecord, SessionStore
 from agnusmail.modules.authentication.suspicious import Verdict, evaluate, fingerprint
+from agnusmail.modules.identity.models import User, UserStatus
 
 log = get_logger(__name__)
 
@@ -81,6 +86,7 @@ async def current_session(request: Request) -> SessionContext:
         raise NotAuthenticatedError()
     settings: Settings = request.app.state.settings
     await check_session_fingerprint(request, settings, store, token, record)
+    await check_account_active(request, store, token, record)
     await enforce_rate_limit(request, f"user:{record.owner}", settings.rate_limit_per_user)
     return SessionContext(token=token, record=record)
 
@@ -121,6 +127,34 @@ async def check_session_fingerprint(
             "session_suspicious", reason=verdict.value, user_id=record.owner, action="logged"
         )
         await store.update_fingerprint(token, current)
+
+
+async def check_account_active(
+    request: Request, store: SessionStore, token: str, record: SessionRecord
+) -> None:
+    """End the session of a suspended account on its next request.
+
+    A database failure skips the check: every route that reads or changes data needs the
+    database and answers 503 on its own, so nothing is served from a stale status.
+    """
+    factory: sessionmaker[Session] | None = request.app.state.db_session_factory
+    if factory is None:
+        return
+    owner = uuid.UUID(record.owner)
+
+    def status() -> str | None:
+        with factory() as session:
+            return session.scalar(select(User.status).where(User.id == owner))
+
+    try:
+        current = await run_in_threadpool(status)
+    except SQLAlchemyError as exc:
+        log.warning("account_status_check_skipped", error_type=type(exc).__name__)
+        return
+    if current != UserStatus.ACTIVE:
+        await store.revoke(token)
+        log.warning("session_of_inactive_account", user_id=record.owner, action="revoked")
+        raise AccountSuspendedError()
 
 
 CurrentSession = Annotated[SessionContext, Depends(current_session)]

@@ -8,9 +8,9 @@ from typing import Any
 import pytest
 from sqlalchemy.orm import Session, sessionmaker
 
+from agnusmail.core.exceptions import AccountSuspendedError
 from agnusmail.modules.identity.models import User, UserStatus
 from agnusmail.modules.quotas.policy import (
-    AccountSuspendedError,
     QuotaExceededError,
     QuotaPolicy,
     RecipientMailboxUnavailableError,
@@ -84,18 +84,26 @@ def test_a_full_recipient_cannot_receive(
     assert response.json()["error"]["code"] == "RECIPIENT_MAILBOX_UNAVAILABLE"
 
 
-def test_a_suspended_account_cannot_send_or_receive(
+def test_suspending_an_account_ends_its_sessions(
+    pair: tuple[Person, Person], factory: sessionmaker[Session]
+) -> None:
+    alice, _ = pair
+    set_status(factory, alice, UserStatus.SUSPENDED)
+    response = alice.client.get("/v1/usage")
+    assert response.status_code == 403
+    assert response.json()["error"]["code"] == "ACCOUNT_SUSPENDED"
+    assert alice.client.get("/v1/usage").status_code == 401  # the session is gone
+    set_status(factory, alice, UserStatus.ACTIVE)
+    assert alice.client.get("/v1/usage").status_code == 401  # reinstating needs a login
+
+
+def test_a_suspended_account_cannot_receive(
     pair: tuple[Person, Person], factory: sessionmaker[Session]
 ) -> None:
     alice, bob = pair
-    first, second = compose(alice, [bob]), compose(alice, [bob])
-    set_status(factory, alice, UserStatus.SUSPENDED)
-    response = send(alice, first)
-    assert response.status_code == 403
-    assert response.json()["error"]["code"] == "ACCOUNT_SUSPENDED"
-    set_status(factory, alice, UserStatus.ACTIVE)
+    payload = compose(alice, [bob])
     set_status(factory, bob, UserStatus.SUSPENDED)
-    refused = send(alice, second)
+    refused = send(alice, payload)
     assert refused.status_code == 422  # a suspended account is an unknown recipient
     assert refused.json()["error"]["code"] == "RECIPIENT_INVALID"
 

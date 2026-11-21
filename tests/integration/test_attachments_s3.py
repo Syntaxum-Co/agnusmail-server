@@ -12,7 +12,7 @@ import urllib.request
 import pytest
 
 from agnusmail.infrastructure.object_storage import S3ObjectStorage, build_object_storage
-from tests.unit.fakes import make_settings
+from agnusmail.testing.fakes import make_settings
 
 pytestmark = pytest.mark.integration
 

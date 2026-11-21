@@ -25,8 +25,8 @@ from agnusmail.modules.audit.chain import (
 from agnusmail.modules.audit.models import AuditChainHead, AuditEvent, AuditEventType
 from agnusmail.modules.audit.service import ActorContext, chained_fields, record_event
 from agnusmail.modules.identity.models import User
-from tests.unit.auth_helpers import login
-from tests.unit.fakes import make_app, make_session_factory
+from agnusmail.testing.auth import login
+from agnusmail.testing.fakes import make_app, make_session_factory
 
 USER = uuid.UUID("00000000-0000-4000-8000-000000000001")
 DEVICE = uuid.UUID("00000000-0000-4000-8000-000000000002")

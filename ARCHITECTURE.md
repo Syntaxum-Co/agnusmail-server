@@ -21,6 +21,9 @@ Backing services: **PostgreSQL** (all durable state), **Redis** (sessions, nonce
 challenges, rate limits — nothing durable), **S3-compatible storage** (encrypted
 attachments) and **Rspamd** (antispam for the inbound gateway).
 
+Extensions ([docs/extensions.md](docs/extensions.md)) add routes, jobs, admin actions,
+tables and a quota policy to these same processes, without changing their code.
+
 ## Code layout
 
 ```text

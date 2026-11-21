@@ -22,8 +22,8 @@ from agnusmail.modules.identity.repository import (
     normalize_address,
     register_login,
 )
-from tests.unit.fakes import make_app, make_session_factory
-from tests.unit.test_auth import build_message, sign
+from agnusmail.testing.auth import build_message, sign
+from agnusmail.testing.fakes import make_app, make_session_factory
 
 CHECKSUM_ADDRESS = "0x" + "aB" * 20
 

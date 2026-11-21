@@ -16,8 +16,8 @@ from agnusmail.modules.quotas.policy import (
     RecipientMailboxUnavailableError,
 )
 from agnusmail.modules.quotas.usage import add_usage
-from tests.unit.fakes import make_app, make_session_factory, make_settings
-from tests.unit.test_messages import MESSAGES, Person, compose, person, send
+from agnusmail.testing.fakes import make_app, make_session_factory, make_settings
+from agnusmail.testing.people import MESSAGES, Person, compose, person, send
 
 QUOTA = 1024**2  # the smallest limit the settings accept
 

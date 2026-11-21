@@ -39,7 +39,7 @@ def live_person(settings: Settings, factory: sessionmaker[Session]) -> Person:
     """A user with its own app instance: the async Redis pool is bound to the event loop
     of one TestClient, so clients cannot share an app against a real Redis. The database
     engine is shared and owned by the test (the app's own engine is process-global)."""
-    from apps.api.main import create_app
+    from agnusmail.apps.api.main import create_app
 
     app = create_app(settings, session_factory=factory)
     client = TestClient(app, raise_server_exceptions=False)

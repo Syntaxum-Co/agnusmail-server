@@ -4,8 +4,8 @@ from eth_account import Account
 from fastapi.testclient import TestClient
 
 from agnusmail.core.security import SESSION_COOKIE_NAME
-from tests.unit.fakes import make_app
-from tests.unit.test_auth import build_message, sign
+from agnusmail.testing.auth import build_message, sign
+from agnusmail.testing.fakes import make_app
 
 
 def test_renew_without_cookie_is_401() -> None:

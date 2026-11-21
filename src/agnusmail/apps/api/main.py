@@ -30,6 +30,7 @@ from agnusmail.apps.api.routes import health
 from agnusmail.core.config import Settings, get_settings
 from agnusmail.core.exceptions import AgnusmailError, error_payload
 from agnusmail.core.logging import ThrottledWarning, configure_logging, get_logger
+from agnusmail.extensions import Extensions, from_settings
 from agnusmail.infrastructure.database.roles import check_runtime_role
 from agnusmail.infrastructure.database.session import (
     dispose_engine,
@@ -62,7 +63,6 @@ from agnusmail.modules.messages.router import router as messages_router
 from agnusmail.modules.outbound.router import router as outbound_router
 from agnusmail.modules.passkeys.router import router as passkeys_router
 from agnusmail.modules.portal.router import router as portal_router
-from agnusmail.modules.quotas.policy import QuotaPolicy
 from agnusmail.modules.quotas.router import router as usage_router
 from agnusmail.modules.recovery.router import router as recovery_router
 
@@ -76,13 +76,16 @@ def create_app(
     redis: Any | None = None,
     session_factory: sessionmaker[Session] | None = None,
     object_storage: ObjectStorage | None = None,
+    extensions: Extensions | None = None,
 ) -> FastAPI:
     """Build the FastAPI application.
 
     ``redis`` and ``session_factory`` let tests inject in-memory backends; production
     builds a pooled Redis client and a PostgreSQL engine and owns their lifecycle.
+    ``extensions`` defaults to the ones listed in ``AGNUSMAIL_EXTENSIONS``.
     """
     settings = settings or get_settings()
+    extensions = extensions if extensions is not None else from_settings(settings)
     configure_logging(debug=settings.environment == "local")
 
     redis_owner: RedisClient | None = None
@@ -113,7 +116,8 @@ def create_app(
 
     app = FastAPI(title=settings.app_name, docs_url=None, redoc_url=None, lifespan=lifespan)
     app.state.settings = settings
-    app.state.quota_policy = QuotaPolicy.from_settings(settings)
+    app.state.extensions = extensions
+    app.state.quota_policy = extensions.quota_policy(settings)
     app.state.db_session_factory = session_factory
     app.state.nonce_store = NonceStore(redis)
     app.state.device_challenge_store = DeviceChallengeStore(redis)
@@ -193,6 +197,8 @@ def create_app(
     app.include_router(domains_router, prefix=API_V1_PREFIX)
     app.include_router(usage_router, prefix=API_V1_PREFIX)
     app.include_router(abuse_router, prefix=API_V1_PREFIX)
+    for router in extensions.routers():
+        app.include_router(router, prefix=API_V1_PREFIX)
 
     # Middleware: each one added wraps the previous ones, so the LAST added is the
     # OUTERMOST. Security headers and proxy handling sit outside everything else so
@@ -201,7 +207,7 @@ def create_app(
     # streaming check runs directly under the router (BaseHTTPMiddleware layers wrap
     # `receive` in task groups).
     app.add_middleware(RequestBodyLimitMiddleware, max_body_bytes=settings.max_request_body_bytes)
-    install_json_body_requirement(app)
+    install_json_body_requirement(app, exempt=extensions.raw_body_paths())
     install_https_enforcement(app, settings.force_https)
     install_csrf_protection(app, settings)
     install_ip_rate_limit(app)

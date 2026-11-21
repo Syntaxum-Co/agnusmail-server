@@ -62,9 +62,9 @@ key files that group or others can read.
 # 32+ random characters; never change it after the first user exists
 python -c "import secrets; print(secrets.token_hex(32))"   # AGNUSMAIL_RECOVERY_DECOY_SECRET
 
-python -m apps.smtp_inbound generate-key /keys/inbound-signing-key.pgp
-python -m apps.smtp_outbound generate-key /keys/outbound-queue-key.pgp
-python -m apps.smtp_outbound generate-dkim-key /keys/outbound-dkim.pem
+python -m agnusmail.apps.smtp_inbound generate-key /keys/inbound-signing-key.pgp
+python -m agnusmail.apps.smtp_outbound generate-key /keys/outbound-queue-key.pgp
+python -m agnusmail.apps.smtp_outbound generate-dkim-key /keys/outbound-dkim.pem
 ```
 
 The inbound gateway also needs a TLS certificate and key for its MX name (a certificate
@@ -97,10 +97,10 @@ AGNUSMAIL_PORTAL_BASE_URL=https://app.example.com/portal
 
 | Process | Command | Notes |
 |---|---|---|
-| API | default command (`uvicorn apps.api.main:create_app --factory ...`) | port 8000, behind the reverse proxy |
-| Worker | `python -m apps.worker` | one or more instances; jobs are leased |
-| Inbound SMTP | `python -m apps.smtp_inbound` | publish port 25 → 2525 preserving the client IP |
-| Outbound SMTP | `python -m apps.smtp_outbound` | outbound port 25 must be open |
+| API | default command (`uvicorn agnusmail.apps.api.main:create_app --factory ...`) | port 8000, behind the reverse proxy |
+| Worker | `python -m agnusmail.apps.worker` | one or more instances; jobs are leased |
+| Inbound SMTP | `python -m agnusmail.apps.smtp_inbound` | publish port 25 → 2525 preserving the client IP |
+| Outbound SMTP | `python -m agnusmail.apps.smtp_outbound` | outbound port 25 must be open |
 | Rspamd | `rspamd/rspamd` with `docker/rspamd/` mounted | internal network only |
 
 **Hardening for both SMTP services:** read-only root filesystem, no swap (memory limit
@@ -125,7 +125,7 @@ clients forge theirs.
 - `MX` for `MAIL_DOMAIN` → the inbound gateway's host name (`INBOUND_SMTP_HOSTNAME`), with
   `A`/`AAAA` records.
 - `PTR` of the outbound IP → `OUTBOUND_HOSTNAME`, which must resolve back to that IP.
-- SPF, DKIM and DMARC: print them with `python -m apps.smtp_outbound dns-records`.
+- SPF, DKIM and DMARC: print them with `python -m agnusmail.apps.smtp_outbound dns-records`.
 
 ## 9. Operators
 
@@ -134,8 +134,8 @@ need two operators, each signing with their own wallet. Add the first two on the
 with the admin role:
 
 ```sh
-python -m apps.admin bootstrap-operator 0x...first
-python -m apps.admin bootstrap-operator 0x...second
+python -m agnusmail.apps.admin bootstrap-operator 0x...first
+python -m agnusmail.apps.admin bootstrap-operator 0x...second
 ```
 
 ## 10. Backups

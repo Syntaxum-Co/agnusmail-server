@@ -93,6 +93,7 @@ async def verify_siwe(
             result.address,
             session_id=session_id,
             client=client,
+            on_account_created=request.app.state.extensions.account_created_hooks(),
         )
     )
     if not outcome.active:

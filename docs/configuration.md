@@ -12,7 +12,7 @@ bytes, durations are seconds unless the name says otherwise.
 
 | Variable | Default | Notes |
 |---|---|---|
-| `ENVIRONMENT` | `local` | `local`, `staging` or `production`. Anything but `local` turns on the checks below. |
+| `ENVIRONMENT` | `production` | `local`, `staging` or `production`. Anything but `local` turns on the checks below; development opts into `local` explicitly (`.env.example`). |
 
 Outside `local`, the processes refuse to start unless:
 

@@ -58,6 +58,7 @@ jobs:
           --health-cmd "redis-cli ping"
           --health-interval 5s --health-timeout 5s --health-retries 10
     env:
+      AGNUSMAIL_ENVIRONMENT: local
       AGNUSMAIL_DATABASE_URL: postgresql+psycopg://agnusmail:agnus%25ci@localhost:5432/agnusmail
       AGNUSMAIL_REDIS_URL: redis://localhost:6379/0
       AGNUSMAIL_TEST_S3_ENDPOINT: http://localhost:8333
@@ -113,6 +114,7 @@ jobs:
       - name: Smoke test (app starts, /healthz answers, HEALTHCHECK healthy)
         run: |
           docker run -d --name api -p 127.0.0.1:8000:8000 \
+            -e AGNUSMAIL_ENVIRONMENT=local \
             -e AGNUSMAIL_DATABASE_URL=postgresql+psycopg://u:p@127.0.0.1:1/smoke \
             -e AGNUSMAIL_REDIS_URL=redis://127.0.0.1:1/0 \
             agnusmail-api:ci

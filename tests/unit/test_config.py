@@ -21,7 +21,7 @@ DEPLOYED: dict[str, Any] = {
 
 def test_settings_load_with_valid_environment() -> None:
     settings = make_settings()
-    assert settings.environment is Environment.LOCAL
+    assert settings.environment is Environment.LOCAL  # the test helper opts in
     assert settings.redis_socket_timeout_seconds == 1.0
     assert settings.db_pool_size == 10
 
@@ -31,9 +31,21 @@ def test_settings_read_prefixed_environment_variables(monkeypatch: pytest.Monkey
     monkeypatch.setenv("AGNUSMAIL_REDIS_URL", "redis://h:6379/0")
     monkeypatch.setenv("AGNUSMAIL_RATE_LIMIT_PER_IP", "7")
     monkeypatch.setenv("DATABASE_URL", "postgresql+psycopg://wrong/db")
+    monkeypatch.setenv("AGNUSMAIL_ENVIRONMENT", "local")
     settings = Settings(_env_file=None)  # type: ignore[call-arg]
     assert settings.database_url == "postgresql+psycopg://u:p@h/db"
     assert settings.rate_limit_per_ip == 7
+
+
+def test_the_default_environment_is_production(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Forgetting AGNUSMAIL_ENVIRONMENT must not turn the deployed checks off."""
+    monkeypatch.delenv("AGNUSMAIL_ENVIRONMENT", raising=False)
+    monkeypatch.setenv("AGNUSMAIL_DATABASE_URL", "postgresql+psycopg://u:p@h/db")
+    monkeypatch.setenv("AGNUSMAIL_REDIS_URL", "redis://h:6379/0")
+    with pytest.raises(ValidationError, match="production"):
+        Settings(_env_file=None)  # type: ignore[call-arg]
+    monkeypatch.setenv("AGNUSMAIL_ENVIRONMENT", "local")
+    assert Settings(_env_file=None).environment is Environment.LOCAL  # type: ignore[call-arg]
 
 
 def test_secret_urls_are_not_logged_in_repr() -> None:

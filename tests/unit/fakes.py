@@ -13,6 +13,7 @@ from agnusmail.infrastructure.database.base import Base
 from agnusmail.modules import models as _all_models  # noqa: F401  (registers every table)
 
 BASE_VALUES: dict[str, Any] = {
+    "environment": "local",
     "database_url": "postgresql+psycopg://user:pass@localhost:5432/agnusmail",
     "redis_url": "redis://localhost:6379/0",
 }

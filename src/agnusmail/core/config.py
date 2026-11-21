@@ -27,7 +27,9 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(env_prefix="AGNUSMAIL_", env_file=".env", extra="ignore")
 
-    environment: Environment = Environment.LOCAL
+    # Secure by default: every deployed-environment check applies unless a developer
+    # explicitly opts into "local" (see .env.example and docker-compose.yml).
+    environment: Environment = Environment.PRODUCTION
     app_name: str = "agnusmail-api"
 
     # Database. DSN may contain credentials, so it is never logged.

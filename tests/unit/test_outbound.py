@@ -30,9 +30,9 @@ from agnusmail.modules.outbound.recipients import (
     is_internal,
     normalize_recipient,
 )
-from tests.openpgp_helpers import DeviceKeys, encrypt_split, new_device
-from tests.unit.fakes import make_app, make_session_factory, make_settings
-from tests.unit.test_messages import Person, person, published
+from agnusmail.testing.fakes import make_app, make_session_factory, make_settings
+from agnusmail.testing.openpgp import DeviceKeys, encrypt_split, new_device
+from agnusmail.testing.people import Person, person, published
 
 OUTBOUND = "/v1/outbound/messages"
 MAIL_DOMAIN = "mail.agnusmail.localhost"
@@ -341,7 +341,7 @@ def test_limits_fail_closed(app: Any, alice: Person, sender: str, queue: DeviceK
 def test_a_device_bound_session_is_required(app: Any, queue: DeviceKeys) -> None:
     from fastapi.testclient import TestClient
 
-    from tests.unit.auth_helpers import login
+    from agnusmail.testing.auth import login
 
     with TestClient(app) as client:
         login(client)

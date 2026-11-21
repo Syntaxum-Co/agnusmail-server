@@ -30,10 +30,10 @@ from agnusmail.modules.inbound import delivery
 from agnusmail.modules.inbound.delivery import Arrival, GatewayContext, register_gateway_key
 from agnusmail.modules.inbound.smtp import InboundHandler, build_smtp
 from agnusmail.modules.messages.models import Message
-from tests.openpgp_helpers import DeviceKeys
-from tests.unit.auth_helpers import login
-from tests.unit.fakes import make_app, make_session_factory, make_settings
-from tests.unit.test_messages import Person, person, second_device
+from agnusmail.testing.auth import login
+from agnusmail.testing.fakes import make_app, make_session_factory, make_settings
+from agnusmail.testing.openpgp import DeviceKeys
+from agnusmail.testing.people import Person, person, second_device
 from tests.unit.test_recovery import register_recovery
 
 DOMAIN = "mail.agnusmail.test"

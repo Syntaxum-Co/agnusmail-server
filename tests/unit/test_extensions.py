@@ -12,7 +12,10 @@ from sqlalchemy.orm import Session
 
 from agnusmail.core.exceptions import AgnusmailError
 from agnusmail.extensions import Extension, ExtensionError, Extensions, from_environment, load
-from agnusmail.infrastructure.database.roles import RUNTIME_TABLE_PRIVILEGES
+from agnusmail.infrastructure.database.roles import (
+    GATEWAY_TABLE_PRIVILEGES,
+    RUNTIME_TABLE_PRIVILEGES,
+)
 from agnusmail.modules.admin.service import ActionInvalidError, Context, Kind, changes_for
 from agnusmail.modules.admin.service import validate as validate_action
 from agnusmail.modules.audit.models import AuditEventTypeName
@@ -127,14 +130,19 @@ def test_extensions_only_add_their_own_tables() -> None:
     "privileges",
     [
         {"runtime": {"users": ("SELECT", "UPDATE", "DELETE")}},  # a built-in table
+        {"runtime": {"operators": ("SELECT", "INSERT")}},  # admin-only: no API access
+        {"runtime": {"alembic_version": ("UPDATE",)}},  # owner-only
+        {"gateway": {"audit_events": ("SELECT",)}},  # built-in, absent from this role
         {"runtime": {"example_items": ("TRUNCATE",)}},  # not a DML privilege
         {"runtime": {"example_items": ()}},
     ],
 )
 def test_extensions_cannot_widen_or_invent_privileges(privileges: Any) -> None:
     sneaky = Extension(name="sneaky", table_privileges=privileges)
+    (role,) = privileges
+    base = {"runtime": RUNTIME_TABLE_PRIVILEGES, "gateway": GATEWAY_TABLE_PRIVILEGES}[role]
     with pytest.raises(ExtensionError):
-        Extensions((sneaky,)).privileges("runtime", RUNTIME_TABLE_PRIVILEGES)
+        Extensions((sneaky,)).privileges(role, base)
 
 
 def test_unknown_roles_are_refused() -> None:

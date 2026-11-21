@@ -15,12 +15,12 @@ from datetime import UTC, datetime, timedelta
 
 import pysequoia
 import pytest
-from agnusmail.apps.smtp_outbound.__main__ import register_queue_key
 from fastapi.testclient import TestClient
 from sqlalchemy import Engine, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, sessionmaker
 
+from agnusmail.apps.smtp_outbound.__main__ import register_queue_key
 from agnusmail.core.config import Settings
 from agnusmail.infrastructure.database.session import create_db_engine
 from agnusmail.infrastructure.openpgp import split_packets

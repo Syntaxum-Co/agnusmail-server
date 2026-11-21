@@ -133,7 +133,7 @@ def test_verify_run_detects_gaps_reordering_and_tampering() -> None:
 
 def test_migration_backfill_uses_the_same_version_1_hash() -> None:
     """The migration carries a frozen copy of the algorithm; it must stay identical."""
-    path = next(Path("migrations/versions").glob("*_0003_audit_hash_chain.py"))
+    path = next(Path("src/agnusmail/migrations/versions").glob("*_0003_audit_hash_chain.py"))
     spec = importlib.util.spec_from_file_location("migration_0003", path)
     assert spec is not None and spec.loader is not None
     module: ModuleType = importlib.util.module_from_spec(spec)

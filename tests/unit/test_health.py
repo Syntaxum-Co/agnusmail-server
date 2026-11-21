@@ -3,7 +3,7 @@
 import asyncio
 import time
 
-from apps.api.main import create_app
+from agnusmail.apps.api.main import create_app
 from fastapi.testclient import TestClient
 
 from agnusmail.infrastructure.database import session as db_session

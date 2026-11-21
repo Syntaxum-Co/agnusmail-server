@@ -165,5 +165,4 @@ Contributions are welcome. Read [CONTRIBUTING.md](CONTRIBUTING.md) first.
 
 ## License
 
-[GNU Affero General Public License v3.0](LICENSE) (`AGPL-3.0-only`). If you run a
-modified version as a network service, you must offer its source code to its users.
+[Apache License 2.0](LICENSE) (`Apache-2.0`). Copyright 2026 Natan Dias; see [NOTICE](NOTICE).

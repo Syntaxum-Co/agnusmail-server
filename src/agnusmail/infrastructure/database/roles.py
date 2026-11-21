@@ -66,6 +66,7 @@ RUNTIME_TABLE_PRIVILEGES: dict[str, tuple[str, ...]] = {
     "portal_messages": ("SELECT", "INSERT", "DELETE"),
     "portal_links": ("SELECT", "INSERT", "UPDATE", "DELETE"),
     "mail_folders": ("SELECT", "INSERT", "UPDATE", "DELETE"),  # names: ciphertext only
+    "audit_event_types": ("SELECT",),  # changed only by migrations
     "abuse_reports": ("SELECT", "INSERT"),  # metadata only, never changed
     "account_restrictions": ("SELECT", "INSERT", "UPDATE"),
 }

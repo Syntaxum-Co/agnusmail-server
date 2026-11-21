@@ -12,8 +12,8 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from agnusmail.modules.attachments.models import Attachment, AttachmentStatus
 from agnusmail.modules.attachments.service import cleanup_orphans
-from tests.unit.fakes import FakeObjectStorage, make_app, make_session_factory, make_settings
-from tests.unit.test_messages import Person, compose, person
+from agnusmail.testing.fakes import FakeObjectStorage, make_app, make_session_factory, make_settings
+from agnusmail.testing.people import Person, compose, person
 
 ATTACHMENTS = "/v1/attachments"
 

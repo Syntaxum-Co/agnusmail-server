@@ -102,7 +102,7 @@ services:
       AGNUSMAIL_SIWE_URI: ${DEV_FRONTEND_ORIGIN:-http://127.0.0.1:5173}
       AGNUSMAIL_CORS_ALLOWED_ORIGINS: '["${DEV_FRONTEND_ORIGIN:-http://127.0.0.1:5173}"]'
       AGNUSMAIL_SIWE_CHAIN_ID: ${DEV_SIWE_CHAIN_ID:-1}
-      # Secure portal links: the front's portal page; the token is the fragment.
+      # Secure portal links: the web client's portal page; the token is the fragment.
       AGNUSMAIL_PORTAL_BASE_URL: ${DEV_FRONTEND_ORIGIN:-http://127.0.0.1:5173}/portal
       # "s3.localhost" works from the browser and from the containers (see object-storage).
       AGNUSMAIL_OBJECT_STORAGE_ENDPOINT: http://s3.localhost:8333

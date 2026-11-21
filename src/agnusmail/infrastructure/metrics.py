@@ -1,7 +1,7 @@
 """Prometheus metrics.
 
 Privacy rule: labels only take values from small fixed sets (HTTP method, the route
-*template* such as ``/v1/messages/{message_id}``, status code, outcome, job kind, plan).
+*template* such as ``/v1/messages/{message_id}``, status code, outcome, job kind).
 Never an id, address, e-mail, token, key, IP or anything from a message. A test scrapes
 the exposition after real traffic and looks for such values.
 

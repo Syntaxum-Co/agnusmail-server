@@ -8,7 +8,7 @@ drop or disable triggers, or truncate. It is not a superuser, so it cannot set
 
     python -m agnusmail.infrastructure.database.roles
 
-runs as the owner after every migration (the ``migrate`` service). It creates or
+runs as the owner after every migration. It creates or
 updates the runtime role, sets its password from a SCRAM verifier computed on the
 client (the password itself never reaches the server or its logs), and re-applies the
 grants. A table missing from ``RUNTIME_TABLE_PRIVILEGES`` stops provisioning: every new

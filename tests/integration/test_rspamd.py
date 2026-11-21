@@ -55,9 +55,9 @@ def test_gateway_with_real_rspamd_end_to_end() -> None:
     from agnusmail.infrastructure.openpgp import generate_gateway_key, load_gateway_key
     from agnusmail.modules.inbound.delivery import GatewayContext, register_gateway_key
     from agnusmail.modules.inbound.smtp import InboundHandler
-    from tests.unit.fakes import make_app, make_session_factory, make_settings
+    from agnusmail.testing.fakes import make_app, make_session_factory, make_settings
+    from agnusmail.testing.people import person
     from tests.unit.test_inbound import DOMAIN, Gateway, inbox, open_external, smtp, with_address
-    from tests.unit.test_messages import person
 
     assert URL is not None
     settings = make_settings(mail_domain=DOMAIN)

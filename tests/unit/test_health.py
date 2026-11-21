@@ -7,7 +7,7 @@ from fastapi.testclient import TestClient
 
 from agnusmail.apps.api.main import create_app
 from agnusmail.infrastructure.database import session as db_session
-from tests.unit.fakes import FakeAsyncRedis, make_app, make_settings
+from agnusmail.testing.fakes import FakeAsyncRedis, make_app, make_settings
 
 
 def test_healthz_is_always_up() -> None:

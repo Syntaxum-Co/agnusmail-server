@@ -26,9 +26,9 @@ from agnusmail.modules.outbound.models import (
 )
 from agnusmail.modules.outbound.queue_key import QueueKey, generate_queue_key, load_queue_key
 from agnusmail.modules.outbound.sender import OutboundSender, expire_due, retry_delay
+from agnusmail.testing.fakes import make_app, make_session_factory
+from agnusmail.testing.people import Person, person
 from tests.outbound_helpers import FakeResolver, TestMta
-from tests.unit.fakes import make_app, make_session_factory
-from tests.unit.test_messages import Person, person
 from tests.unit.test_outbound import OUTBOUND, claim, mime, submission
 from tests.unit.test_outbound_dkim import receiver_dns
 
@@ -259,7 +259,7 @@ def test_purge_job_deletes_old_records(
 ) -> None:
     from agnusmail.modules.jobs.handlers import purge_outbound
     from agnusmail.modules.jobs.queue import JobContext
-    from tests.unit.fakes import make_settings
+    from agnusmail.testing.fakes import make_settings
 
     outbound_id = submit(alice, queue_key, ["b@example.org"])
     worker(factory, queue_key, signer, FakeTransport()).run_once(datetime.now(UTC))

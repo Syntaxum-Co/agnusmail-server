@@ -7,6 +7,7 @@ from typing import Any
 import pytest
 from fastapi import APIRouter, Request
 from fastapi.testclient import TestClient
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from agnusmail.core.exceptions import AgnusmailError
@@ -14,6 +15,8 @@ from agnusmail.extensions import Extension, ExtensionError, Extensions, from_env
 from agnusmail.infrastructure.database.roles import RUNTIME_TABLE_PRIVILEGES
 from agnusmail.modules.admin.service import ActionInvalidError, Context, Kind, changes_for
 from agnusmail.modules.admin.service import validate as validate_action
+from agnusmail.modules.audit.models import AuditEventTypeName
+from agnusmail.modules.audit.service import record_event
 from agnusmail.modules.identity.models import User
 from agnusmail.modules.jobs.handlers import JOBS, SCHEDULE, Periodic
 from agnusmail.modules.jobs.queue import JobSpec
@@ -202,3 +205,22 @@ def test_admin_actions_cannot_replace_built_in_ones() -> None:
     hijack = Extension(name="hijack", admin_actions={"suspend_account": Kind({}, act)})
     with pytest.raises(ExtensionError):
         changes_for(Extensions((hijack,)))
+
+
+# --- audit event types ----------------------------------------------------------------
+
+
+def test_audit_event_types_must_be_registered() -> None:
+    """Built-in types work; an extension's type needs its row in audit_event_types."""
+    factory = make_session_factory()
+    with factory() as session, session.begin():
+        user = User(ethereum_address="0x" + "ef" * 20)
+        session.add(user)
+        session.flush()
+        record_event(session, None, "auth.logout", owner_id=user.id)
+    with factory() as session, pytest.raises(IntegrityError), session.begin():
+        record_event(session, None, "example.unregistered", owner_id=user.id)
+    with factory() as session, session.begin():
+        session.add(AuditEventTypeName(name="example.registered"))
+        session.flush()
+        record_event(session, None, "example.registered", owner_id=user.id)

@@ -22,7 +22,8 @@ from agnusmail.infrastructure.openpgp import GatewayKey
 from agnusmail.infrastructure.redis.rate_limit import RateLimiter
 from agnusmail.modules.inbound.delivery import GatewayContext, register_gateway_key
 from agnusmail.modules.inbound.smtp import InboundHandler, build_smtp, build_tls_context
-from tests.unit.fakes import FakeAsyncRedis, make_app, make_session_factory, make_settings
+from agnusmail.testing.fakes import FakeAsyncRedis, make_app, make_session_factory, make_settings
+from agnusmail.testing.people import person
 from tests.unit.test_inbound import (
     DOMAIN,
     EXTERNAL,
@@ -32,7 +33,6 @@ from tests.unit.test_inbound import (
     signing_key,  # noqa: F401  (fixture)
     with_address,
 )
-from tests.unit.test_messages import person
 
 
 class TlsGateway(Gateway):

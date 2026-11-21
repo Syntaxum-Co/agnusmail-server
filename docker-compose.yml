@@ -1,3 +1,13 @@
+# Local development and testing only (see README.md). Every published port binds to
+# 127.0.0.1. Not a production deployment: see docs/self-hosting.md.
+#
+#   cp .env.example .env
+#   docker compose up -d                          # PostgreSQL, Redis, S3, Rspamd
+#   docker compose --profile app up -d --build    # + API, worker and SMTP services
+
+# Fixed project name: networks and volumes are agnusmail_*, whatever the checkout's name.
+name: agnusmail
+
 services:
   postgres:
     image: postgres:17
@@ -36,15 +46,15 @@ services:
     volumes:
       - ./docker/seaweedfs/s3.json:/etc/seaweedfs/s3.json:ro
       - s3data:/data
+    # Presigned URLs name http://s3.localhost:8333. Browsers resolve *.localhost to
+    # 127.0.0.1 (the published port); containers resolve it to this service.
+    networks:
+      default:
+        aliases: ["s3.localhost"]
 
-  # ---------------------------------------------------------------------------------
-  # Local app for front-end development: docker compose --profile app up -d --build
-  # A web client (e.g. Vite on http://127.0.0.1:5173) proxies /v1 to :8000.
-  # Development only: environment "local", owner DB role, dev-only S3 credentials.
-  # ---------------------------------------------------------------------------------
-  # Antispam for the inbound gateway. Keeps nothing and sends nothing
-  # derived from message content to third parties: see docker/rspamd/README.md. Internal
-  # network only (no published port).
+  # Antispam for the inbound gateway. Keeps nothing and sends nothing derived from
+  # message content to third parties: see docker/rspamd/README.md. Internal network
+  # only (no published port).
   rspamd:
     image: rspamd/rspamd:4.2.3
     volumes:
@@ -61,6 +71,11 @@ services:
       timeout: 5s
       retries: 12
 
+  # ---------------------------------------------------------------------------------
+  # The whole stack: docker compose --profile app up -d --build
+  # A web client (e.g. Vite on http://127.0.0.1:5173) proxies /v1 to :8000.
+  # Development only: environment "local", owner DB role, dev-only S3 credentials.
+  # ---------------------------------------------------------------------------------
   migrate:
     profiles: ["app"]
     build: { context: ., dockerfile: docker/Dockerfile }
@@ -89,16 +104,12 @@ services:
       AGNUSMAIL_SIWE_CHAIN_ID: ${DEV_SIWE_CHAIN_ID:-1}
       # Secure portal links: the front's portal page; the token is the fragment.
       AGNUSMAIL_PORTAL_BASE_URL: ${DEV_FRONTEND_ORIGIN:-http://127.0.0.1:5173}/portal
-      # Internal /metrics for Prometheus; not published.
-      AGNUSMAIL_METRICS_PORT: "9100"
-      # "s3.localhost" resolves to the host in the browser (*.localhost) and, through
-      # extra_hosts, from the containers: presigned URLs work on both sides.
+      # "s3.localhost" works from the browser and from the containers (see object-storage).
       AGNUSMAIL_OBJECT_STORAGE_ENDPOINT: http://s3.localhost:8333
       AGNUSMAIL_OBJECT_STORAGE_BUCKET: agnusmail-dev
       AGNUSMAIL_OBJECT_STORAGE_ACCESS_KEY: agnusmail-dev
       AGNUSMAIL_OBJECT_STORAGE_SECRET_KEY: agnusmail-dev-only-not-a-secret
       DEV_FRONTEND_ORIGINS: ${DEV_FRONTEND_ORIGIN:-http://127.0.0.1:5173},http://localhost:5173
-    extra_hosts: ["s3.localhost:host-gateway"]
     entrypoint: ["sh", "/dev-scripts/with-db-url.sh"]
     command: ["python", "/dev-scripts/init_storage.py"]
     volumes:
@@ -113,7 +124,6 @@ services:
     image: agnusmail-api:dev
     env_file: .env
     environment: *dev-app-env
-    extra_hosts: ["s3.localhost:host-gateway"]
     entrypoint: ["sh", "/dev-scripts/with-db-url.sh"]
     command: ["uvicorn", "apps.api.main:create_app", "--factory", "--host", "0.0.0.0", "--port", "8000"]
     ports:
@@ -133,7 +143,6 @@ services:
     image: agnusmail-api:dev
     env_file: .env
     environment: *dev-app-env
-    extra_hosts: ["s3.localhost:host-gateway"]
     entrypoint: ["sh", "/dev-scripts/with-db-url.sh"]
     command: ["python", "-m", "apps.worker"]
     healthcheck:
@@ -236,32 +245,6 @@ services:
     read_only: true
     cap_drop:
       - ALL
-
-  # Observability: `docker compose --profile app --profile observability
-  # up -d`. Grafana on 127.0.0.1:3000 (admin password from DEV_GRAFANA_PASSWORD).
-  prometheus:
-    profiles: ["observability"]
-    image: prom/prometheus:v3.15.1
-    volumes:
-      - ./docker/prometheus:/etc/prometheus:ro
-    command: ["--config.file=/etc/prometheus/prometheus.yml"]
-    ports:
-      - "127.0.0.1:9090:9090"
-
-  grafana:
-    profiles: ["observability"]
-    image: grafana/grafana:13.2.5
-    environment:
-      GF_SECURITY_ADMIN_PASSWORD: ${DEV_GRAFANA_PASSWORD:-dev-only-not-a-secret}
-      GF_ANALYTICS_REPORTING_ENABLED: "false"
-      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
-    volumes:
-      - ./docker/grafana/provisioning:/etc/grafana/provisioning:ro
-      - ./docker/grafana/dashboards:/var/lib/grafana/dashboards:ro
-    ports:
-      - "127.0.0.1:3000:3000"
-    depends_on:
-      - prometheus
 
 volumes:
   gateway-key:

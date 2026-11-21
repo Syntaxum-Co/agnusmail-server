@@ -1,4 +1,4 @@
-"""Development only: create the attachments bucket and allow the web app's origins
+"""Development only: create the attachments bucket and allow the web client's origins
 (browsers upload/download attachments straight to the storage with presigned URLs)."""
 
 import os
@@ -20,7 +20,10 @@ for _attempt in range(60):
 else:
     raise SystemExit("object storage did not come up")
 if storage.bucket not in names:
-    storage.client.create_bucket(Bucket=storage.bucket)
+    try:
+        storage.client.create_bucket(Bucket=storage.bucket)
+    except storage.client.exceptions.BucketAlreadyOwnedByYou:
+        pass  # created by an earlier run that the listing did not show yet
 storage.client.put_bucket_cors(
     Bucket=storage.bucket,
     CORSConfiguration={

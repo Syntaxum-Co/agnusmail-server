@@ -17,7 +17,7 @@ set -eu
 cd "$(dirname "$0")/.."
 SRC=$(pwd -W 2>/dev/null || pwd)
 export MSYS_NO_PATHCONV=1
-NETWORK=agnus-email-core_default
+NETWORK=agnusmail_default
 MARKER="testonly$(od -An -N12 -tx1 /dev/urandom | tr -d ' \n')"
 FAILED=0
 
@@ -81,7 +81,7 @@ CHANGES=$(docker diff "$GATEWAY" | grep -v -x -e 'A /dev-scripts' -e '[AC] /var/
 [ -z "$CHANGES" ] && ok "gateway filesystem unchanged (no file, no core)" || fail "gateway filesystem changed: $CHANGES"
 
 echo "== search for the marker"
-if docker run --rm -v agnus-email-core_gateway-key:/k:ro python:3.13-slim grep -rqa "$MARKER" /k; then
+if docker run --rm -v agnusmail_gateway-key:/k:ro python:3.13-slim grep -rqa "$MARKER" /k; then
   fail "marker in the gateway key volume"
 else
   ok "gateway key volume"

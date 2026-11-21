@@ -28,6 +28,7 @@ from sqlalchemy import Connection, Engine, create_engine, text
 from sqlalchemy.exc import SQLAlchemyError
 
 from agnusmail.core.logging import get_logger
+from agnusmail.extensions import Extensions, from_environment
 
 log = get_logger(__name__)
 
@@ -147,16 +148,25 @@ def _public_tables(connection: Connection) -> set[str]:
     return set(rows.scalars())
 
 
-def provision_runtime_role(connection: Connection, role: str, password: str | None) -> bool:
+NO_EXTENSIONS = Extensions()
+
+
+def provision_runtime_role(
+    connection: Connection,
+    role: str,
+    password: str | None,
+    extensions: Extensions = NO_EXTENSIONS,
+) -> bool:
     """Create/update the API's ``role`` and re-apply its grants. True if it was created."""
+    privileges = extensions.privileges("runtime", RUNTIME_TABLE_PRIVILEGES)
     tables = _public_tables(connection) if connection.dialect.name == "postgresql" else set()
-    undecided = tables - set(RUNTIME_TABLE_PRIVILEGES) - OWNER_ONLY_TABLES - ADMIN_ONLY_TABLES
-    missing = set(RUNTIME_TABLE_PRIVILEGES) - tables
+    undecided = tables - set(privileges) - OWNER_ONLY_TABLES - ADMIN_ONLY_TABLES
+    missing = set(privileges) - tables
     if connection.dialect.name == "postgresql" and (undecided or missing):
         raise RoleProvisioningError(
             f"privilege map out of date: undecided={sorted(undecided)} missing={sorted(missing)}"
         )
-    return _provision(connection, role, password, RUNTIME_TABLE_PRIVILEGES, sequences=True)
+    return _provision(connection, role, password, privileges, sequences=True)
 
 
 def _provision_service(
@@ -173,24 +183,42 @@ def _provision_service(
     return _provision(connection, role, password, privileges, sequences=False)
 
 
-def provision_gateway_role(connection: Connection, role: str, password: str | None) -> bool:
+def provision_gateway_role(
+    connection: Connection,
+    role: str,
+    password: str | None,
+    extensions: Extensions = NO_EXTENSIONS,
+) -> bool:
     """Create/update the gateway's ``role``: only ``GATEWAY_TABLE_PRIVILEGES``."""
-    return _provision_service(connection, role, password, GATEWAY_TABLE_PRIVILEGES, "gateway")
+    privileges = extensions.privileges("gateway", GATEWAY_TABLE_PRIVILEGES)
+    return _provision_service(connection, role, password, privileges, "gateway")
 
 
-def provision_admin_role(connection: Connection, role: str, password: str | None) -> bool:
+def provision_admin_role(
+    connection: Connection,
+    role: str,
+    password: str | None,
+    extensions: Extensions = NO_EXTENSIONS,
+) -> bool:
     """Create/update the admin CLI's ``role``: only ``ADMIN_TABLE_PRIVILEGES`` (plus the
     audit sequence, to append events)."""
+    privileges = extensions.privileges("admin", ADMIN_TABLE_PRIVILEGES)
     if connection.dialect.name == "postgresql":
-        missing = set(ADMIN_TABLE_PRIVILEGES) - _public_tables(connection)
+        missing = set(privileges) - _public_tables(connection)
         if missing:
             raise RoleProvisioningError(f"admin privilege map out of date: {sorted(missing)}")
-    return _provision(connection, role, password, ADMIN_TABLE_PRIVILEGES, sequences=True)
+    return _provision(connection, role, password, privileges, sequences=True)
 
 
-def provision_outbound_role(connection: Connection, role: str, password: str | None) -> bool:
+def provision_outbound_role(
+    connection: Connection,
+    role: str,
+    password: str | None,
+    extensions: Extensions = NO_EXTENSIONS,
+) -> bool:
     """Create/update the outbound service's ``role``: only ``OUTBOUND_TABLE_PRIVILEGES``."""
-    return _provision_service(connection, role, password, OUTBOUND_TABLE_PRIVILEGES, "outbound")
+    privileges = extensions.privileges("outbound", OUTBOUND_TABLE_PRIVILEGES)
+    return _provision_service(connection, role, password, privileges, "outbound")
 
 
 def _provision(
@@ -333,6 +361,7 @@ def main() -> int:
         message = "AGNUSMAIL_DATABASE_URL (owner) and AGNUSMAIL_DB_APP_PASSWORD are required"
         print(message, file=sys.stderr)
         return 2
+    extensions = from_environment()  # their tables need their own grants
     engine = create_engine(url, connect_args={"connect_timeout": 10})
     gateway_role = os.environ.get("AGNUSMAIL_DB_GATEWAY_USER", DEFAULT_GATEWAY_ROLE)
     gateway_password = os.environ.get("AGNUSMAIL_DB_GATEWAY_PASSWORD")
@@ -342,17 +371,21 @@ def main() -> int:
     outbound_password = os.environ.get("AGNUSMAIL_DB_OUTBOUND_PASSWORD")
     try:
         with engine.begin() as connection:
-            created = provision_runtime_role(connection, role, password)
+            created = provision_runtime_role(connection, role, password, extensions)
             gateway_created = None
             if gateway_password:
-                gateway_created = provision_gateway_role(connection, gateway_role, gateway_password)
+                gateway_created = provision_gateway_role(
+                    connection, gateway_role, gateway_password, extensions
+                )
             admin_created = None
             if admin_password:
-                admin_created = provision_admin_role(connection, admin_role, admin_password)
+                admin_created = provision_admin_role(
+                    connection, admin_role, admin_password, extensions
+                )
             outbound_created = None
             if outbound_password:
                 outbound_created = provision_outbound_role(
-                    connection, outbound_role, outbound_password
+                    connection, outbound_role, outbound_password, extensions
                 )
     finally:
         engine.dispose()

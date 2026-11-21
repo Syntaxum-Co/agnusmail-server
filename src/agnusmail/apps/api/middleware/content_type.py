@@ -28,11 +28,15 @@ def _is_json(content_type: str) -> bool:
     return media_type == "application/json"
 
 
-def install_json_body_requirement(app: FastAPI) -> None:
+def install_json_body_requirement(app: FastAPI, exempt: frozenset[str] = frozenset()) -> None:
+    """``exempt``: exact paths called by third parties that may not label their JSON
+    (webhooks added by extensions, which must parse and authenticate the body themselves)."""
+
     @app.middleware("http")
     async def require_json(request: Request, call_next: CallNext) -> Response:
         if (
-            request.method in UNSAFE_METHODS
+            request.url.path not in exempt
+            and request.method in UNSAFE_METHODS
             and _has_body(request)
             and not _is_json(request.headers.get("content-type", ""))
         ):

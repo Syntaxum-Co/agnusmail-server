@@ -9,13 +9,13 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import pytest
-from agnusmail.apps.admin import __main__ as cli
 from eth_account import Account
 from eth_account.messages import encode_defunct
 from eth_account.signers.local import LocalAccount
 from sqlalchemy import select
 from sqlalchemy.orm import Session, sessionmaker
 
+from agnusmail.apps.admin import __main__ as cli
 from agnusmail.infrastructure.database.roles import (
     ADMIN_ONLY_TABLES,
     ADMIN_TABLE_PRIVILEGES,

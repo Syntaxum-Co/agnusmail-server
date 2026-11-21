@@ -118,6 +118,28 @@ The policy is used wherever storage grows: sending, uploads, the secure portal a
 inbound SMTP gateway (which answers `452` to an account that cannot receive). Reading,
 moving and deleting never depend on it.
 
+## Testing an extension
+
+`agnusmail.testing` (install `agnusmail[testing]`) builds the real app with in-memory
+backends and gives you logged-in users with a bound device:
+
+```python
+from agnusmail.extensions import Extensions
+from agnusmail.testing.fakes import make_app, make_session_factory
+from agnusmail.testing.people import compose, person, send
+
+from my_extension.plugin import extension
+
+
+def test_hello() -> None:
+    app, _ = make_app(session_factory=make_session_factory(), extensions=Extensions((extension,)))
+    alice, bob = person(app), person(app)
+    assert alice.client.get("/v1/hello").status_code == 200
+    assert send(alice, compose(alice, [bob])).status_code == 201
+```
+
+The helpers never decrypt anything, and no Agnusmail service imports them.
+
 ## Checklist
 
 - [ ] Every new route checks the session (`CurrentSession` or `DeviceSession`) unless it

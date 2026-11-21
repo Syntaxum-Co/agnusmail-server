@@ -24,11 +24,11 @@ from agnusmail.testing.people import (
     PLAINTEXT,
     Person,
     compose,
-    open_message,
     person,
     second_device,
     send,
 )
+from tests.client_decrypt import open_message
 
 
 @pytest.fixture

@@ -18,9 +18,9 @@ from agnusmail.modules.devices.attestation import (
     device_revocation_typed_data,
 )
 from agnusmail.modules.keys.policy import registration_statement
-from tests.openpgp_helpers import DeviceKeys, b64, new_device
-from tests.unit.auth_helpers import LoggedIn
-from tests.unit.fakes import make_settings
+from agnusmail.testing.auth import LoggedIn
+from agnusmail.testing.fakes import make_settings
+from agnusmail.testing.openpgp import DeviceKeys, b64, new_device
 
 DEVICES = "/v1/devices"
 FORMAT = PROTOCOL_KEY_FORMAT

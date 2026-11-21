@@ -34,8 +34,8 @@ You can run it yourself; a web client talks to it over the `/v1` API.
 Requirements: Docker with Compose v2.
 
 ```sh
-git clone https://github.com/Syntaxum-Co/agnusmail-backend-opensource.git agnusmail
-cd agnusmail
+git clone https://github.com/Syntaxum-Co/agnusmail-server.git
+cd agnusmail-server
 cp .env.example .env                        # then change AGNUSMAIL_DB_PASSWORD
 docker compose --profile app up -d --build  # PostgreSQL, Redis, S3, Rspamd, API, worker, SMTP
 curl http://127.0.0.1:8000/readyz           # {"status":"ready"}

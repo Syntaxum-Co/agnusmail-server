@@ -18,11 +18,11 @@ from typing import Any
 import dkim
 import pysequoia
 import pytest
-from agnusmail.apps.smtp_outbound.__main__ import register_queue_key
 from sqlalchemy import Engine, create_engine, make_url, select, text, update
 from sqlalchemy.exc import DBAPIError, IntegrityError
 from sqlalchemy.orm import Session, sessionmaker
 
+from agnusmail.apps.smtp_outbound.__main__ import register_queue_key
 from agnusmail.core.config import Settings
 from agnusmail.infrastructure.database.roles import (
     OUTBOUND_TABLE_PRIVILEGES,

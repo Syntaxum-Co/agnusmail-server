@@ -130,7 +130,7 @@ def test_format_label_check_is_enforced_by_postgres(
 def _user_and_actor(factory: sessionmaker[Session]) -> tuple[ActorContext, str]:
     address = "0x" + secrets.token_hex(20)
     with factory() as session, session.begin():
-        user = register_login(session, address, datetime.now(UTC))
+        user, _ = register_login(session, address, datetime.now(UTC))
         return ActorContext(user_id=user.id, client={"ua": "0" * 64, "net": "1" * 64}), address
 
 

@@ -15,7 +15,7 @@ from agnusmail.modules.keys.policy import (
     material_digest,
     registration_statement,
 )
-from tests.openpgp_helpers import new_device
+from agnusmail.testing.openpgp import new_device
 
 SERVICE = "app.agnusmail"
 

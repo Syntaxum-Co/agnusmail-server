@@ -16,8 +16,8 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from agnusmail.infrastructure.openpgp import check_recovery_backup, split_packets
 from agnusmail.modules.recovery import fetch
-from tests.unit.fakes import make_app, make_session_factory, make_settings
-from tests.unit.test_messages import Person, person
+from agnusmail.testing.fakes import make_app, make_session_factory, make_settings
+from agnusmail.testing.people import Person, person
 from tests.unit.test_recovery import register_recovery
 
 VECTOR = Path(__file__).resolve().parent.parent / "vectors" / "recovery_backup_openpgpjs.pgp"

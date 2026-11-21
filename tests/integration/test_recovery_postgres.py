@@ -19,8 +19,9 @@ from agnusmail.modules.identity.models import User
 from agnusmail.modules.jobs.handlers import complete_migrations
 from agnusmail.modules.jobs.queue import JobContext
 from agnusmail.modules.recovery.models import AccountMigration, RecoveryBackup, RecoveryKey
+from agnusmail.testing.people import PLAINTEXT, compose
+from tests.client_decrypt import open_message
 from tests.integration.test_messages_postgres import live_person
-from tests.unit.test_messages import PLAINTEXT, compose, open_message
 from tests.unit.test_recovery import migration_payload, register_recovery
 
 pytestmark = pytest.mark.integration

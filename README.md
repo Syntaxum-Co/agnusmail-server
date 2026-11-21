@@ -71,7 +71,7 @@ uv sync --locked
 cp .env.example .env
 docker compose up -d              # PostgreSQL, Redis, S3 and Rspamd only
 uv run alembic upgrade head
-uv run uvicorn apps.api.main:create_app --factory --reload
+uv run uvicorn agnusmail.apps.api.main:create_app --factory --reload
 ```
 
 Checks (the same as CI):
@@ -98,10 +98,10 @@ Rspamd tests also need `AGNUSMAIL_TEST_RSPAMD_URL` and a published Rspamd port (
 Other processes:
 
 ```sh
-uv run python -m apps.worker          # background jobs
-uv run python -m apps.smtp_inbound    # inbound SMTP gateway
-uv run python -m apps.smtp_outbound   # outbound SMTP delivery
-uv run python -m apps.admin --help    # administration CLI (two-operator approval)
+uv run python -m agnusmail.apps.worker          # background jobs
+uv run python -m agnusmail.apps.smtp_inbound    # inbound SMTP gateway
+uv run python -m agnusmail.apps.smtp_outbound   # outbound SMTP delivery
+uv run python -m agnusmail.apps.admin --help    # administration CLI (two-operator approval)
 ```
 
 Every setting is an environment variable with the `AGNUSMAIL_` prefix; see
@@ -131,12 +131,13 @@ Each process uses its own PostgreSQL role with only the privileges it needs. See
 [ARCHITECTURE.md](ARCHITECTURE.md) for components, data model and flows.
 
 ```text
-apps/              process entry points (api, worker, smtp_inbound, smtp_outbound, admin)
 src/agnusmail/
+  apps/            process entry points (api, worker, smtp_inbound, smtp_outbound, admin)
   core/            settings, logging, errors, security helpers
   infrastructure/  PostgreSQL, Redis, S3, OpenPGP (Sequoia), metrics
   modules/         one folder per feature: models, service, router
-migrations/        Alembic migrations
+  migrations/      Alembic migrations
+  extensions.py    extension points (see docs/extensions.md)
 tests/             unit (in-memory) and integration (real PostgreSQL/Redis/S3) tests
 docs/              protocol specification, configuration, self-hosting
 docker/            container image and development configuration

@@ -10,9 +10,9 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session, sessionmaker
 
 from agnusmail.modules.folders.models import MailFolder
-from tests.openpgp_helpers import encrypt_split, new_device
-from tests.unit.fakes import make_app, make_session_factory
-from tests.unit.test_messages import Person, compose, person, published, second_device, send
+from agnusmail.testing.fakes import make_app, make_session_factory
+from agnusmail.testing.openpgp import encrypt_split, new_device
+from agnusmail.testing.people import Person, compose, person, published, second_device, send
 
 FOLDERS = "/v1/folders"
 

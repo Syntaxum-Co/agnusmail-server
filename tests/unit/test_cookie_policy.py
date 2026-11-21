@@ -2,7 +2,7 @@
 
 from agnusmail.core.config import Settings
 from agnusmail.core.security import SESSION_COOKIE_NAME, set_session_cookie
-from tests.unit.fakes import make_settings
+from agnusmail.testing.fakes import make_settings
 
 
 class CookieCapture:

@@ -199,7 +199,7 @@ def test_concurrent_device_registrations_respect_limit(factory: sessionmaker[Ses
 def test_device_and_directory_flow_through_the_api(settings_env: Settings) -> None:
     import base64
 
-    from apps.api.main import create_app
+    from agnusmail.apps.api.main import create_app
     from fastapi.testclient import TestClient
 
     from tests.unit.auth_helpers import login

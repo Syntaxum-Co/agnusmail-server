@@ -64,13 +64,15 @@ def test_postgres_constraints(factory: sessionmaker[Session]) -> None:
 def test_concurrent_first_logins_create_one_user(factory: sessionmaker[Session]) -> None:
     address = random_address()
 
-    def login() -> str:
+    def login() -> tuple[str, bool]:
         with factory() as session, session.begin():
-            return str(register_login(session, address, datetime.now(UTC)).id)
+            user, created = register_login(session, address, datetime.now(UTC))
+            return str(user.id), created
 
     with ThreadPoolExecutor(max_workers=8) as pool:
-        ids = set(pool.map(lambda _: login(), range(16)))
-    assert len(ids) == 1
+        results = list(pool.map(lambda _: login(), range(16)))
+    assert len({user_id for user_id, _ in results}) == 1
+    assert sum(created for _, created in results) == 1  # exactly one login created it
     with factory() as session, session.begin():
         count = session.scalar(
             select(func.count()).select_from(User).where(User.ethereum_address == address)

@@ -4,23 +4,23 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import Any
 
-from apps.api.middleware.body_limit import (
+from agnusmail.apps.api.middleware.body_limit import (
     RequestBodyLimitMiddleware,
     RequestBodyTooLarge,
     body_too_large_response,
 )
-from apps.api.middleware.content_type import install_json_body_requirement
-from apps.api.middleware.csrf import install_csrf_protection
-from apps.api.middleware.limits import install_concurrency_limit, install_request_timeout
-from apps.api.middleware.metrics import install_metrics
-from apps.api.middleware.security import (
+from agnusmail.apps.api.middleware.content_type import install_json_body_requirement
+from agnusmail.apps.api.middleware.csrf import install_csrf_protection
+from agnusmail.apps.api.middleware.limits import install_concurrency_limit, install_request_timeout
+from agnusmail.apps.api.middleware.metrics import install_metrics
+from agnusmail.apps.api.middleware.security import (
     install_cors,
     install_https_enforcement,
     install_ip_rate_limit,
     install_proxy_headers,
     install_security_headers,
 )
-from apps.api.routes import health
+from agnusmail.apps.api.routes import health
 from fastapi import FastAPI, Request
 from fastapi.concurrency import run_in_threadpool
 from fastapi.exceptions import RequestValidationError

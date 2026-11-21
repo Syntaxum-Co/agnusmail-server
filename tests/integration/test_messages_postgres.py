@@ -14,9 +14,10 @@ from agnusmail.infrastructure.database.session import create_db_engine
 from agnusmail.modules import models as _all_models  # noqa: F401  (resolves every FK)
 from agnusmail.modules.identity.models import User
 from agnusmail.modules.messages.models import Message
-from tests.unit.auth_helpers import login
-from tests.unit.device_helpers import onboard
-from tests.unit.test_messages import PLAINTEXT, Person, bind_session, compose, open_message
+from agnusmail.testing.auth import login
+from agnusmail.testing.devices import onboard
+from agnusmail.testing.people import PLAINTEXT, Person, bind_session, compose
+from tests.client_decrypt import open_message
 
 pytestmark = pytest.mark.integration
 

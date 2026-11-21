@@ -3,9 +3,9 @@
 import asyncio
 import time
 
-from agnusmail.apps.api.main import create_app
 from fastapi.testclient import TestClient
 
+from agnusmail.apps.api.main import create_app
 from agnusmail.infrastructure.database import session as db_session
 from tests.unit.fakes import FakeAsyncRedis, make_app, make_settings
 

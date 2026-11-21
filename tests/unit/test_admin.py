@@ -9,7 +9,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import pytest
-from apps.admin import __main__ as cli
+from agnusmail.apps.admin import __main__ as cli
 from eth_account import Account
 from eth_account.messages import encode_defunct
 from eth_account.signers.local import LocalAccount

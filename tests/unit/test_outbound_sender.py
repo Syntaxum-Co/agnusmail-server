@@ -13,7 +13,7 @@ from typing import Any
 
 import dkim
 import pytest
-from apps.smtp_outbound.__main__ import register_queue_key
+from agnusmail.apps.smtp_outbound.__main__ import register_queue_key
 from sqlalchemy import select
 from sqlalchemy.orm import Session, sessionmaker
 

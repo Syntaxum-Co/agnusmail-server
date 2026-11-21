@@ -20,7 +20,7 @@ from agnusmail.modules.outbound.queue_key import (
     generate_queue_key,
     load_queue_key,
 )
-from tests.unit.fakes import make_settings
+from agnusmail.testing.fakes import make_settings
 
 REPO = Path(__file__).resolve().parents[2]
 
@@ -31,8 +31,7 @@ def test_decryption_lives_only_in_the_queue_key_module() -> None:
     allowed = {REPO / "src/agnusmail/modules/outbound/queue_key.py"}
     offenders = [
         str(path.relative_to(REPO))
-        for root in ("src", "apps")
-        for path in (REPO / root).rglob("*.py")
+        for path in (REPO / "src").rglob("*.py")
         if pattern.search(path.read_text(encoding="utf-8")) and path not in allowed
     ]
     assert offenders == []

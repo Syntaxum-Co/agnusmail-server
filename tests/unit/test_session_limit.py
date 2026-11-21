@@ -10,7 +10,7 @@ from agnusmail.modules.authentication.stores import (
     SESSION_OWNER_PREFIX,
     SessionStore,
 )
-from tests.unit.fakes import FakeAsyncRedis
+from agnusmail.testing.fakes import FakeAsyncRedis
 
 
 class FakeClock:

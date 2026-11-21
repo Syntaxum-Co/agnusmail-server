@@ -5,7 +5,7 @@ import pytest
 from agnusmail.infrastructure.redis.cache import Cache
 from agnusmail.infrastructure.redis.rate_limit import RateLimiter
 from agnusmail.modules.authentication.stores import NonceStore
-from tests.unit.fakes import FakeAsyncRedis
+from agnusmail.testing.fakes import FakeAsyncRedis
 
 
 async def test_cache_set_get_roundtrip() -> None:

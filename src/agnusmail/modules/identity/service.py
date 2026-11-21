@@ -1,6 +1,7 @@
 """Identity use cases executed outside the event loop (sync SQLAlchemy sessions)."""
 
 import uuid
+from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
 
@@ -9,6 +10,7 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from agnusmail.core.exceptions import DatabaseUnavailableError
 from agnusmail.core.logging import get_logger
+from agnusmail.extensions import AccountCreatedHook
 from agnusmail.modules.audit.models import AuditEventType
 from agnusmail.modules.audit.service import ActorContext, record_event
 from agnusmail.modules.identity.models import UserStatus
@@ -29,15 +31,22 @@ def record_login(
     *,
     session_id: str,
     client: dict[str, str] | None = None,
+    on_account_created: Sequence[AccountCreatedHook] = (),
 ) -> LoginOutcome:
     """Register the address on first login, stamp last_login_at and audit the attempt.
 
     All in one transaction: a login is never recorded without its audit event. A
     suspended account gets an ``auth.login_denied`` event instead of ``auth.login``.
+    ``on_account_created`` hooks (from extensions) run in the same transaction when this
+    login creates the account.
     """
     try:
         with session_factory() as session, session.begin():
-            user = register_login(session, address, datetime.now(UTC))
+            now = datetime.now(UTC)
+            user, created = register_login(session, address, now)
+            if created:
+                for hook in on_account_created:
+                    hook(session, user, now)
             active = user.status == UserStatus.ACTIVE
             record_event(
                 session,

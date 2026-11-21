@@ -31,6 +31,9 @@ class Settings(BaseSettings):
     # explicitly opts into "local" (see .env.example and docker-compose.yml).
     environment: Environment = Environment.PRODUCTION
     app_name: str = "agnusmail-api"
+    # Extensions to load, as "package.module:attribute" (see docs/extensions.md). They run
+    # with the full privileges of every process: only list code you trust.
+    extensions: list[str] = Field(default_factory=list)
 
     # Database. DSN may contain credentials, so it is never logged.
     database_url: str = Field(repr=False)

@@ -13,7 +13,7 @@ ENV UV_COMPILE_BYTECODE=1 \
 
 # Build the venv at its final path: console-script shebangs are absolute.
 WORKDIR /app
-COPY pyproject.toml uv.lock README.md LICENSE ./
+COPY pyproject.toml uv.lock README.md LICENSE NOTICE ./
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --locked --no-install-project --no-dev
 

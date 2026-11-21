@@ -7,7 +7,7 @@ from fastapi import FastAPI, Request
 from httpx import ASGITransport, AsyncClient
 
 from agnusmail.core.config import Settings
-from tests.unit.fakes import make_app, make_settings
+from agnusmail.testing.fakes import make_app, make_settings
 
 TIGHT_SETTINGS = make_settings(request_timeout_seconds=1, max_concurrent_requests=1)
 SMALL_BODY_SETTINGS = make_settings(max_request_body_bytes=100)

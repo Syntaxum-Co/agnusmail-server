@@ -18,7 +18,7 @@ from typing import Any
 import dkim
 import pysequoia
 import pytest
-from apps.smtp_outbound.__main__ import register_queue_key
+from agnusmail.apps.smtp_outbound.__main__ import register_queue_key
 from sqlalchemy import Engine, create_engine, make_url, select, text, update
 from sqlalchemy.exc import DBAPIError, IntegrityError
 from sqlalchemy.orm import Session, sessionmaker

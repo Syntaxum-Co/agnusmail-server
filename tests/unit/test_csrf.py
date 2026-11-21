@@ -5,7 +5,7 @@ from fastapi.testclient import TestClient
 
 from agnusmail.apps.api.middleware.csrf import origin_of, trusted_origins
 from agnusmail.core.config import Settings
-from tests.unit.fakes import make_app, make_settings
+from agnusmail.testing.fakes import make_app, make_settings
 
 NONCE = "/v1/auth/siwe/nonce"
 
@@ -74,7 +74,7 @@ def test_safe_methods_are_not_checked() -> None:
 def test_logout_csrf_does_not_revoke_session() -> None:
     from eth_account import Account
 
-    from tests.unit.test_auth import build_message, sign
+    from agnusmail.testing.auth import build_message, sign
 
     with client_for() as client:
         acct = Account.create()

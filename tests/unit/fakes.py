@@ -9,6 +9,7 @@ from sqlalchemy.pool import StaticPool
 
 from agnusmail.apps.api.main import create_app
 from agnusmail.core.config import Settings
+from agnusmail.extensions import Extensions
 from agnusmail.infrastructure.database.base import Base
 from agnusmail.modules import models as _all_models  # noqa: F401  (registers every table)
 
@@ -219,6 +220,7 @@ def make_app(
     session_factory: sessionmaker[Session] | None = None,
     *,
     object_storage: Any = "fake",
+    extensions: Extensions | None = None,
 ) -> tuple[FastAPI, FakeAsyncRedis]:
     fake = FakeAsyncRedis()
     app = create_app(
@@ -226,5 +228,6 @@ def make_app(
         redis=fake,
         session_factory=session_factory or make_session_factory(),
         object_storage=FakeObjectStorage() if object_storage == "fake" else object_storage,
+        extensions=extensions,
     )
     return app, fake

@@ -17,7 +17,7 @@ from agnusmail.modules.audit.models import AuditEvent
 from agnusmail.modules.devices.models import Device, DeviceStatus
 from agnusmail.modules.identity.models import User
 from agnusmail.modules.keys.models import PublicKey, PublicKeyStatus
-from tests.unit.fakes import make_session_factory
+from agnusmail.testing.fakes import make_session_factory
 
 NOW = datetime(2026, 11, 11, 12, 0, tzinfo=UTC)
 

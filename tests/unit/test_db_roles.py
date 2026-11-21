@@ -18,7 +18,7 @@ from agnusmail.infrastructure.database.roles import (
     provision_runtime_role,
     runtime_role_problems,
 )
-from tests.unit.fakes import FakeAsyncRedis, make_settings
+from agnusmail.testing.fakes import FakeAsyncRedis, make_settings
 
 
 def test_every_table_has_an_explicit_runtime_privilege_decision() -> None:

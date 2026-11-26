@@ -114,7 +114,15 @@ def create_app(
             if redis_owner is not None:
                 await redis_owner.dispose()
 
-    app = FastAPI(title=settings.app_name, docs_url=None, redoc_url=None, lifespan=lifespan)
+    # No API description outside local: the schema of every route (including an
+    # extension's) is a map for whoever probes a deployment.
+    app = FastAPI(
+        title=settings.app_name,
+        docs_url=None,
+        redoc_url=None,
+        openapi_url="/openapi.json" if settings.environment == "local" else None,
+        lifespan=lifespan,
+    )
     app.state.settings = settings
     app.state.extensions = extensions
     app.state.quota_policy = extensions.quota_policy(settings)

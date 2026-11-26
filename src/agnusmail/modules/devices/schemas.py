@@ -36,7 +36,10 @@ class DeviceCreate(BaseModel):
         return clean_label(value)
 
 
-UnixSeconds = Annotated[int, Field(ge=0, le=2**63 - 1)]
+# Signed as uint64, but turned into datetimes, which end at 9999-12-31T23:59:59Z: a later
+# value used to escape as an unhandled error (500), even on routes without a session.
+MAX_UNIX_SECONDS = 253402300799
+UnixSeconds = Annotated[int, Field(ge=0, le=MAX_UNIX_SECONDS)]
 WALLET_SIGNATURE_PATTERN = r"^0x[0-9a-fA-F]{130}$"
 
 

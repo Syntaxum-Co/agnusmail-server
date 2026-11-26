@@ -2,6 +2,7 @@
 
 from fastapi.testclient import TestClient
 
+from agnusmail.core.config import Settings
 from agnusmail.testing.fakes import make_app, make_settings
 
 
@@ -20,6 +21,27 @@ def test_security_headers_present_and_no_hsts_by_default() -> None:
     assert response.headers["Cache-Control"] == "no-store"
     assert "frame-ancestors 'none'" in response.headers["Content-Security-Policy"]
     assert "Strict-Transport-Security" not in response.headers
+
+
+def test_the_api_description_is_served_only_in_local() -> None:
+    """Deployments do not publish /openapi.json, a map of every route."""
+    with client_for() as client:
+        assert client.get("/openapi.json").status_code == 200
+    deployed = {
+        "environment": "staging",
+        "database_url": "postgresql+psycopg://u:p@db/agnusmail?sslmode=require",
+        "redis_url": "redis://localhost:6379/0",
+        "force_https": True,
+        "mail_domain": "example.com",
+        "siwe_domain": "app.example.com",
+        "siwe_uri": "https://app.example.com/login",
+        "trusted_proxies": ["10.0.0.1"],
+        "recovery_decoy_secret": "s" * 64,
+    }
+    app, _ = make_app(Settings.model_validate(deployed))
+    with TestClient(app, base_url="https://testserver", raise_server_exceptions=False) as client:
+        assert client.get("/openapi.json").status_code == 404
+        assert client.get("/healthz").status_code == 200
 
 
 def test_https_enforcement_off_by_default() -> None:

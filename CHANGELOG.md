@@ -5,6 +5,9 @@ All notable changes are listed here. The project follows
 
 ## Unreleased
 
+- Change: publishing a device certificate whose primary key is already on another
+  device answers `409 DEVICE_KEY_IN_USE` instead of the generic `409 CONFLICT`, which
+  tells clients to retry. Clients that matched `CONFLICT` here should match the new code.
 - Fix: outbound and secure-portal submissions accept SEIPD packets with partial body
   lengths (RFC 9580 §4.2.1.4), as OpenPGP.js writes them for any message over 512 bytes.
   Before, such messages were refused with `ENVELOPE_INVALID` (`partial_length`).

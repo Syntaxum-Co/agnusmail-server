@@ -19,6 +19,7 @@ from sqlalchemy.orm import Session
 
 from agnusmail.core.exceptions import (
     ConflictError,
+    DeviceKeyInUseError,
     InvalidStateError,
     KeyRejectedError,
     LimitExceededError,
@@ -82,7 +83,7 @@ def register_key(
     if device.fingerprint is None:
         taken = session.scalar(select(Device.id).where(Device.fingerprint == info.fingerprint))
         if taken is not None:
-            raise ConflictError("this certificate already belongs to another device")
+            raise DeviceKeyInUseError()
         device.fingerprint = info.fingerprint
     elif device.fingerprint != info.fingerprint:
         raise KeyRejectedError("a new version must keep the device's primary key")

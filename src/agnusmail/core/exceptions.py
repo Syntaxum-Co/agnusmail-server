@@ -74,6 +74,17 @@ class ConflictError(AgnusmailError):
     code = "CONFLICT"
 
 
+class DeviceKeyInUseError(AgnusmailError):
+    """The certificate's primary key is already fixed on another device (protocol v1 §3.3).
+
+    Not a race: retrying cannot succeed, so it has its own code instead of CONFLICT.
+    """
+
+    status_code = 409
+    message = "this certificate already belongs to another device"
+    code = "DEVICE_KEY_IN_USE"
+
+
 class InvalidStateError(AgnusmailError):
     status_code = 409
     message = "operation not allowed in the current state"

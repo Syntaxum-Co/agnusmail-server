@@ -29,6 +29,7 @@ from agnusmail.modules.devices.attestation import (
     migration_acceptance_typed_data,
     recovery_key_typed_data,
 )
+from agnusmail.modules.devices.schemas import MAX_UNIX_SECONDS
 from agnusmail.modules.identity.models import User
 from agnusmail.modules.recovery.migration import complete_due_migrations, migration_statement
 from agnusmail.modules.recovery.service import RECOVERY_FORMAT, registration_statement
@@ -256,6 +257,21 @@ def test_migration_requests_need_valid_proofs(app: Any, alice: Person) -> None:
             assert response.json()["error"]["code"] == "MIGRATION_REJECTED"
         login(anonymous, new_wallet)  # the new wallet already has an account now
         assert anonymous.post("/v1/recovery/migrations", json=good).status_code == 409
+
+
+def test_timestamps_past_year_9999_are_refused_not_crashed(app: Any, alice: Person) -> None:
+    """``issued_at`` past 9999-12-31 used to escape ``datetime.fromtimestamp`` as a 500 on
+    this session-less route."""
+    good = migration_payload(alice, register_recovery(alice), Account.create())
+    with TestClient(app, raise_server_exceptions=False) as anonymous:
+        for issued_at in (MAX_UNIX_SECONDS + 1, 2**63 - 1):
+            payload = good | {"issued_at": issued_at}
+            response = anonymous.post("/v1/recovery/migrations", json=payload)
+            assert response.status_code == 422, issued_at
+            assert response.json()["error"]["code"] == "VALIDATION_ERROR"
+    # The bound is the last second datetime can hold (fromtimestamp is platform-bound).
+    last = datetime(1970, 1, 1, tzinfo=UTC) + timedelta(seconds=MAX_UNIX_SECONDS)
+    assert last == datetime(9999, 12, 31, 23, 59, 59, tzinfo=UTC)
 
 
 def test_completed_migration_moves_the_account(

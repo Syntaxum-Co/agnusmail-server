@@ -100,3 +100,27 @@ def encrypt_split(
     )
     packets = split_packets(message)
     return packets[:-1], packets[-1]
+
+
+def partial_framed(packet: bytes, chunk_exponent: int = 9) -> bytes:
+    """Re-frame a definite-length packet with partial body lengths (RFC 9580 §4.2.1.4),
+    as OpenPGP.js writes the SEIPD of any message over 512 bytes: chunks of
+    ``2 ** chunk_exponent`` bytes, then a definite-length last chunk."""
+    framed = split_packets(packet)
+    assert len(framed) == 1
+    first = packet[1]
+    header = 2 if first < 192 else 3 if first < 224 else 6
+    body, chunk = packet[header:], 1 << chunk_exponent
+    assert len(body) > chunk, "the body must span more than one chunk"
+    out = bytearray(packet[:1])
+    while len(body) > chunk:
+        out += bytes([0xE0 | chunk_exponent]) + body[:chunk]
+        body = body[chunk:]
+    if len(body) < 192:
+        out += bytes([len(body)])
+    elif len(body) < 8384:
+        length = len(body) - 192
+        out += bytes([(length >> 8) + 192, length & 0xFF])
+    else:
+        out += b"\xff" + len(body).to_bytes(4, "big")
+    return bytes(out + body)

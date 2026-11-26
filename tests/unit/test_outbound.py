@@ -17,6 +17,7 @@ import pytest
 from sqlalchemy import select
 from sqlalchemy.orm import Session, sessionmaker
 
+from agnusmail.infrastructure.openpgp import split_packets
 from agnusmail.modules.audit.models import AuditEvent
 from agnusmail.modules.messages.models import Message, MessageOrigin
 from agnusmail.modules.outbound.models import (
@@ -31,7 +32,7 @@ from agnusmail.modules.outbound.recipients import (
     normalize_recipient,
 )
 from agnusmail.testing.fakes import make_app, make_session_factory, make_settings
-from agnusmail.testing.openpgp import DeviceKeys, encrypt_split, new_device
+from agnusmail.testing.openpgp import DeviceKeys, encrypt_split, new_device, partial_framed
 from agnusmail.testing.people import Person, person, published
 
 OUTBOUND = "/v1/outbound/messages"
@@ -272,6 +273,24 @@ def test_without_a_queue_key_outbound_is_unavailable(alice: Person, sender: str)
     response = alice.client.post(OUTBOUND, json=payload)
     assert response.status_code == 503
     assert response.json()["error"]["code"] == "OUTBOUND_UNAVAILABLE"
+
+
+def test_partial_length_payload_is_queued(
+    alice: Person, sender: str, queue: DeviceKeys, factory: sessionmaker[Session]
+) -> None:
+    """OpenPGP.js frames the SEIPD of any message over 512 bytes with partial body
+    lengths (RFC 9580 §4.2.1.4); the web client's replies must still be queued."""
+    plaintext = mime(sender) + b"TEST-ONLY quoted reply line\r\n" * 60
+    pkesk, seipd = split_packets(encrypt_to(queue.cert, plaintext))
+    payload = submission(queue, plaintext)
+    payload["payload"] = b64(pkesk + partial_framed(seipd))
+    response = alice.client.post(OUTBOUND, json=payload)
+    assert response.status_code == 202, response.text
+    with factory() as session:
+        row = session.get(OutboundMessage, uuid.UUID(response.json()["id"]))
+        assert row is not None and row.payload is not None
+        opened = pysequoia.decrypt(decryptor=queue.tsk.decryptor(), bytes=row.payload)
+        assert bytes(opened.bytes or b"") == plaintext
 
 
 def test_malformed_payloads_are_refused(alice: Person, sender: str, queue: DeviceKeys) -> None:

@@ -353,31 +353,61 @@ class EncryptedMessage:
     body: bytes
 
 
+# Packets RFC 9580 §4.2.1.4 lets carry partial body lengths (data packets only).
+PARTIAL_LENGTH_TAGS = frozenset({8, 9, 11, 18, 20})
+MIN_FIRST_PARTIAL_BYTES = 512  # RFC 9580 §4.2.1.4
+
+
+def _body_length(data: bytes, at: int) -> tuple[int, int | None]:
+    """One new-format length field at ``at``: (its size, the length), or None as the
+    length for a partial body length (whose chunk size is 2 ** (octet & 0x1F))."""
+    if at >= len(data):
+        raise EnvelopeRejectedError("truncated")
+    first = data[at]
+    if first < 192:
+        return 1, first
+    if first < 224:
+        if at + 1 >= len(data):
+            raise EnvelopeRejectedError("truncated")
+        return 2, ((first - 192) << 8) + data[at + 1] + 192
+    if first == 255:
+        if at + 5 > len(data):
+            raise EnvelopeRejectedError("truncated")
+        return 5, int.from_bytes(data[at + 1 : at + 5], "big")
+    return 1, None
+
+
 def split_packets(data: bytes) -> list[bytes]:
     """Raw packets (header + body) of a binary OpenPGP stream, by reading the headers.
 
-    Only OpenPGP (new-format) headers with definite lengths (RFC 9580 §4.2.1); partial
-    lengths and legacy headers are refused, as Sequoia never writes them for buffers.
+    Only OpenPGP (new-format) headers (RFC 9580 §4.2.1); legacy headers are refused.
+    Partial body lengths (§4.2.1.4) are accepted only where the RFC allows them (data
+    packets, e.g. the SEIPD OpenPGP.js writes for any message over 512 bytes), with a
+    first chunk of at least 512 bytes and a definite-length last chunk. The raw packet
+    keeps its original framing.
     """
     packets: list[bytes] = []
     offset = 0
     while offset < len(data):
         if data[offset] & 0xC0 != 0xC0:
             raise EnvelopeRejectedError("legacy_packet_header")
-        first = data[offset + 1] if offset + 1 < len(data) else None
-        if first is None:
-            raise EnvelopeRejectedError("truncated")
-        if first < 192:
-            header, length = 2, first
-        elif first < 224:
-            if offset + 2 >= len(data):
-                raise EnvelopeRejectedError("truncated")
-            header, length = 3, ((first - 192) << 8) + data[offset + 2] + 192
-        elif first == 255:
-            header, length = 6, int.from_bytes(data[offset + 2 : offset + 6], "big")
-        else:
-            raise EnvelopeRejectedError("partial_length")
-        end = offset + header + length
+        tag = data[offset] & 0x3F
+        cursor = offset + 1
+        size, length = _body_length(data, cursor)
+        if length is None:
+            if tag not in PARTIAL_LENGTH_TAGS:
+                raise EnvelopeRejectedError("partial_length")
+            chunk = 1 << (data[cursor] & 0x1F)
+            if chunk < MIN_FIRST_PARTIAL_BYTES:
+                raise EnvelopeRejectedError("partial_length")
+            while length is None:
+                cursor += size + chunk
+                if cursor > len(data):
+                    raise EnvelopeRejectedError("truncated")
+                size, length = _body_length(data, cursor)
+                if length is None:
+                    chunk = 1 << (data[cursor] & 0x1F)
+        end = cursor + size + length
         if end > len(data):
             raise EnvelopeRejectedError("truncated")
         packets.append(data[offset:end])

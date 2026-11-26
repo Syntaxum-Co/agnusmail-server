@@ -282,7 +282,10 @@ def test_trace_headers_cannot_be_injected() -> None:
     "data",
     [
         b"\x84\x01",  # legacy header
-        b"\xd2\xe0abc",  # partial body length
+        b"\xd2\xe0abc",  # partial body length with a first chunk under 512 bytes
+        b"\xc1\xe9" + bytes(512) + b"\x01a",  # partial length on a PKESK
+        b"\xd2\xe9" + bytes(512),  # partial body length without a last chunk
+        b"\xd2\xe9" + bytes(512) + b"\x05ab",  # last chunk truncated
         b"\xd2\x05ab",  # truncated
         b"\xd2",  # header only
     ],
@@ -290,6 +293,14 @@ def test_trace_headers_cannot_be_injected() -> None:
 def test_split_packets_refuses_unexpected_framing(data: bytes) -> None:
     with pytest.raises(EnvelopeRejectedError):
         split_packets(data)
+
+
+def test_split_packets_accepts_rfc_partial_lengths() -> None:
+    """RFC 9580 §4.2.1.4 on a data packet: 512-byte chunks, a smaller one, a
+    definite-length last chunk. The raw packet keeps its framing."""
+    seipd = b"\xd2\xe9" + bytes(512) + b"\xe8" + bytes(256) + b"\x03abc"
+    pkesk = b"\xc1\x02xy"
+    assert split_packets(pkesk + seipd + pkesk) == [pkesk, seipd, pkesk]
 
 
 def test_message_content_and_envelope_never_reach_the_logs(

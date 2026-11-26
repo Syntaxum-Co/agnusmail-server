@@ -191,13 +191,15 @@ def test_a_certificate_stands_for_one_device_only(client: TestClient, user: Logg
     second = pending_device_id(client)
     duplicate = client.post(f"{DEVICES}/{second}/keys", json=key_payload(user.address, device))
     assert duplicate.status_code == 409
-    assert duplicate.json()["error"]["code"] == "CONFLICT"
+    assert duplicate.json()["error"]["code"] == "DEVICE_KEY_IN_USE"
 
     # Another account cannot claim it either, even with a fresh proof for itself.
     other = login(client)
     other_device = pending_device_id(client)
     stolen = client.post(f"{DEVICES}/{other_device}/keys", json=key_payload(other.address, device))
     assert stolen.status_code == 409
+    assert stolen.json()["error"]["code"] == "DEVICE_KEY_IN_USE"
+    assert client.get(f"{DEVICES}/{other_device}/keys").json()["total"] == 0
 
 
 def test_proof_of_possession_is_bound_to_account_and_service(

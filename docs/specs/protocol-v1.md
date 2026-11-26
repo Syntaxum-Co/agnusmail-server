@@ -114,7 +114,9 @@ On publication, the server rejects the certificate if any item fails
   subkey. Since the text names the account and the service, the proof cannot be reused by
   another account or another instance.
 - The primary fingerprint is fixed on the device and unique across all devices: the same
-  certificate cannot represent two devices.
+  certificate cannot represent two devices. Publishing a certificate whose primary
+  fingerprint is already on another device (of any account) is answered with
+  `409 DEVICE_KEY_IN_USE`; retrying cannot succeed, so the client must not offer it.
 - Encryption subkey: OpenPGP has no proof of possession for an encryption-only key.
   Attaching someone else's encryption subkey only makes the attacker receive messages it
   cannot read. Accepted risk **[Q-03]**.

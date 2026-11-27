@@ -345,3 +345,134 @@ def test_access_is_rate_limited_per_ip(factory: sessionmaker[Session]) -> None:
             for _ in range(3)
         ]
     assert codes == [404, 404, 429]
+
+
+# --- View once -----------------------------------------------------------------------
+
+
+def end_window(factory: sessionmaker[Session], recipient: str) -> None:
+    """Moves a link's view-once window into the past (as if its minutes went by)."""
+    with factory() as session, session.begin():
+        link = session.scalars(select(PortalLink).where(PortalLink.recipient == recipient)).one()
+        assert link.viewable_until is not None
+        link.viewable_until = datetime.now(UTC) - timedelta(seconds=1)
+
+
+def test_view_once_window_starts_with_the_envelope_only(
+    alice: Person, anonymous: TestClient, factory: sessionmaker[Session]
+) -> None:
+    data = create(alice, notify=False, view_seconds=180)
+    assert data["view_seconds"] == 180
+    token = token_of(data["links"][0]["url"])
+    # The page's first call shows who sent it and the window, without starting it.
+    for _ in range(2):
+        peeked = anonymous.post(f"{PORTAL}/link", json={"token": token})
+        assert peeked.status_code == 200, peeked.text
+        info = peeked.json()
+        assert "envelope" not in info
+        assert info["view_seconds"] == 180 and info["viewable_until"] is None
+        assert info["replies_left"] == 0 and info["recipient"] == "friend@example.org"
+    with factory() as session:
+        assert session.scalars(select(PortalLink)).one().viewable_until is None
+
+    before = datetime.now(UTC)
+    first = anonymous.post(f"{PORTAL}/access", json={"token": token}).json()
+    until = datetime.fromisoformat(first["viewable_until"])
+    assert before + timedelta(seconds=179) <= until <= datetime.now(UTC) + timedelta(seconds=181)
+    # Within the window (a wrong password, a reload) the same window holds.
+    again = anonymous.post(f"{PORTAL}/access", json={"token": token}).json()
+    assert again["viewable_until"] == first["viewable_until"]
+    assert again["envelope"] == first["envelope"]
+    # The only link was opened: the message now expires when its window ends.
+    with factory() as session:
+        stored = session.scalars(select(PortalMessage)).one()
+        assert abs(stored.expires_at.replace(tzinfo=UTC) - until) < timedelta(seconds=1)
+
+    end_window(factory, "friend@example.org")
+    for route in ("link", "access", "keys"):
+        assert anonymous.post(f"{PORTAL}/{route}", json={"token": token}).status_code == 404
+
+
+def test_view_once_takes_no_replies(alice: Person, anonymous: TestClient) -> None:
+    token = token_of(create(alice, notify=False, view_seconds=60)["links"][0]["url"])
+    anonymous.post(f"{PORTAL}/access", json={"token": token})
+    sealed = pysequoia.encrypt(b"x", recipients=own_certs(alice), armor=False)
+    *pkesks, body = split_packets(sealed)
+    payload = {"token": token, "version": 1, "pkesks": [b64(p) for p in pkesks], "body": b64(body)}
+    response = anonymous.post(f"{PORTAL}/replies", json=payload)
+    assert response.status_code == 409
+    assert response.json()["error"]["code"] == "REPLY_LIMIT"
+    assert alice.client.get("/v1/messages").json()["items"] == []
+
+
+def test_view_once_deletes_everything_after_every_link_was_read(
+    alice: Person, anonymous: TestClient, factory: sessionmaker[Session]
+) -> None:
+    from agnusmail.modules.jobs.handlers import purge_portal
+    from agnusmail.modules.jobs.queue import JobContext
+
+    data = create(
+        alice, notify=False, view_seconds=300, recipients=["a@example.org", "b@example.org"]
+    )
+    tokens = {link["recipient"]: token_of(link["url"]) for link in data["links"]}
+    days = timedelta(days=6)
+    anonymous.post(f"{PORTAL}/access", json={"token": tokens["a@example.org"]})
+    end_window(factory, "a@example.org")
+    purge = JobContext(factory=factory, settings=make_settings())
+    purge_portal(purge, {})
+    # One link still unread: the message stays for it (and for the sender).
+    assert (
+        anonymous.post(f"{PORTAL}/access", json={"token": tokens["a@example.org"]}).status_code
+        == 404
+    )
+    listed = alice.client.get(f"{PORTAL}/messages/{data['id']}").json()
+    assert datetime.fromisoformat(listed["expires_at"]) > datetime.now(UTC) + days
+    states = {r["recipient"]: r["viewable_until"] for r in listed["recipients"]}
+    assert states["a@example.org"] is not None and states["b@example.org"] is None
+
+    assert (
+        anonymous.post(f"{PORTAL}/access", json={"token": tokens["b@example.org"]}).status_code
+        == 200
+    )
+    end_window(factory, "b@example.org")
+    with factory() as session, session.begin():  # the purge runs after the last window
+        message = session.get(PortalMessage, uuid.UUID(data["id"]))
+        assert message is not None
+        message.expires_at = datetime.now(UTC) - timedelta(seconds=1)
+    purge_portal(purge, {})
+    with factory() as session:
+        assert session.scalars(select(PortalMessage)).all() == []
+        assert session.scalars(select(PortalLink)).all() == []
+    assert alice.client.get(f"{PORTAL}/messages/{data['id']}").status_code == 404
+
+
+@pytest.mark.parametrize("seconds", [59, 3601, 0])
+def test_view_once_window_bounds(alice: Person, seconds: int) -> None:
+    payload = request(alice, notify=False, view_seconds=seconds)
+    assert alice.client.post(f"{PORTAL}/messages", json=payload).status_code == 422
+
+
+def test_view_once_notice_says_so(
+    alice: Person, queue: DeviceKeys, factory: sessionmaker[Session]
+) -> None:
+    create(alice, view_seconds=180)
+    with factory() as session:
+        notice = session.scalars(select(OutboundMessage)).one()
+        assert notice.payload is not None
+        opened = pysequoia.decrypt(decryptor=queue.tsk.decryptor(), bytes=notice.payload)
+        text = bytes(opened.bytes or b"")
+    assert b"It can be read only once: you have 3 minutes after you open it" in text
+    assert b"TEST-ONLY" not in text
+
+
+def test_without_view_once_links_stay_readable(
+    alice: Person, anonymous: TestClient, factory: sessionmaker[Session]
+) -> None:
+    data = create(alice, notify=False)
+    assert data["view_seconds"] is None
+    token = token_of(data["links"][0]["url"])
+    for _ in range(2):
+        body = anonymous.post(f"{PORTAL}/access", json={"token": token}).json()
+        assert body["view_seconds"] is None and body["viewable_until"] is None
+    with factory() as session:
+        assert session.scalars(select(PortalLink)).one().viewable_until is None

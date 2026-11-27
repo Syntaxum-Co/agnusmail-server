@@ -652,7 +652,8 @@ to be invented.
 ### 11.1 API
 
 - `POST /v1/portal/messages` (session bound to a device):
-  `{version: 1, message_id, recipients, expires_in_days (1–30), envelope, notify}`. The
+  `{version: 1, message_id, recipients, expires_in_days (1–30), envelope, notify,
+  view_seconds}` (`view_seconds` optional, see *View once* below). The
   envelope has PKESKs for **exactly** the sender's published keys (§6.5; that is how the
   sender keeps its own copy), exactly one v6 SKESK (AES-256/OCB, Argon2 with t ≥ 3,
   p ≥ 4, m ≥ 2^16 KiB) and one SEIPDv2 AES-256/OCB, in this structure (PKESKs and SKESK in
@@ -669,13 +670,26 @@ to be invented.
 - Recipient (no session; the token goes in the JSON body of a `POST`, never in the URL; an
   unknown or expired token = 404; rate-limited per IP): `POST /v1/portal/access`
   (envelope, sender's address, the address the link was made for — the From of a
-  reply —, expiry, remaining replies), `POST /v1/portal/keys` (the
+  reply —, expiry, remaining replies, `view_seconds` and `viewable_until`), `POST /v1/portal/keys` (the
   sender's directory, with the EIP-712 attestations for the browser to verify) and
   `POST /v1/portal/replies` (`{token, version, pkesks, body}`, same completeness rule as
   §6.5; goes to the sender's inbox with `origin = portal`; up to 5 replies per link). The
   server does not attest who replied.
 - Expiry: the database refuses more than 30 days (CHECK); `portal.purge` (worker, every
   10 min) deletes envelope, links and tokens; reads after expiry already answer 404.
+- **View once** (`view_seconds`, 60–3600, CHECK in the database): `POST /v1/portal/link`
+  answers what `access` does without the envelope and never starts anything, so the page
+  can say the message is view-once before the password is typed. The first
+  `POST /v1/portal/access` of a link (the client calls it only once the password is
+  entered) sets that link's `viewable_until = now + view_seconds`; later calls within the
+  window return the same envelope and window (a wrong password, a reload). From
+  `viewable_until` on, `link`, `access` and `keys` answer 404 for that link. View-once
+  links take no replies (`replies_left = 0`, `409 REPLY_LIMIT`). When every link of the
+  message has been opened, its expiry moves to the end of the last window and the purge
+  deletes the envelope — the sender's copy included. The notice says the message can be
+  read once and for how long. The client clears the text when the window ends. Known
+  limitation: the server cannot stop the reader from keeping what was shown (screenshot,
+  copy) during the window; it only stops handing the envelope out again.
 - A client requirement the server cannot verify: a password generated with ≥ 80 bits of
   entropy.
 

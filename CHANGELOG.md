@@ -5,6 +5,11 @@ All notable changes are listed here. The project follows
 
 ## Unreleased
 
+- Add: view-once secure-portal messages (`view_seconds`, 60–3600 s). The first
+  `POST /v1/portal/access` of a link opens a window of that length; after it the link
+  answers 404 and, once every link was opened, the message is deleted. View-once links
+  take no replies. New `POST /v1/portal/link` shows a link's details without the
+  envelope (and without starting the window). Migration `20261127_0028`.
 - Add: `POST /v1/portal/access` also returns `recipient`, the address the link was made
   for, so a portal reply can carry it as its From. Before, the web client wrote the
   sender's own address there, and answering that reply went back to the sender.

@@ -668,7 +668,8 @@ to be invented.
   the envelope in the detail) and `DELETE /v1/portal/messages/{id}`.
 - Recipient (no session; the token goes in the JSON body of a `POST`, never in the URL; an
   unknown or expired token = 404; rate-limited per IP): `POST /v1/portal/access`
-  (envelope, sender's address, expiry, remaining replies), `POST /v1/portal/keys` (the
+  (envelope, sender's address, the address the link was made for — the From of a
+  reply —, expiry, remaining replies), `POST /v1/portal/keys` (the
   sender's directory, with the EIP-712 attestations for the browser to verify) and
   `POST /v1/portal/replies` (`{token, version, pkesks, body}`, same completeness rule as
   §6.5; goes to the sender's inbox with `origin = portal`; up to 5 replies per link). The

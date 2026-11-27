@@ -5,6 +5,9 @@ All notable changes are listed here. The project follows
 
 ## Unreleased
 
+- Add: `POST /v1/portal/access` also returns `recipient`, the address the link was made
+  for, so a portal reply can carry it as its From. Before, the web client wrote the
+  sender's own address there, and answering that reply went back to the sender.
 - Change: publishing a device certificate whose primary key is already on another
   device answers `409 DEVICE_KEY_IN_USE` instead of the generic `409 CONFLICT`, which
   tells clients to retry. Clients that matched `CONFLICT` here should match the new code.

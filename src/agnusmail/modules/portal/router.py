@@ -118,6 +118,9 @@ class AccessOut(BaseModel):
     version: int
     protection: str
     sender: str  # the sender's Agnusmail address
+    # The address this link was made for: a reply's From (the server does not attest who
+    # replied, only which link was used).
+    recipient: str
     envelope: str
     expires_at: UtcDatetime
     replies_left: int
@@ -257,6 +260,7 @@ async def access(request: Request, payload: TokenIn, db: DbSessionFactory) -> Ac
             version=1,
             protection=PROTECTION,
             sender=opened.sender,
+            recipient=opened.link.recipient,
             envelope=_b64(opened.message.envelope),
             expires_at=opened.message.expires_at,
             replies_left=max(settings.portal_max_replies_per_link - opened.link.replies, 0),

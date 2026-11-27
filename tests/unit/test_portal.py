@@ -224,6 +224,7 @@ def test_recipient_opens_with_the_token_only(
     assert opened.status_code == 200, opened.text
     body = opened.json()
     assert body["sender"].endswith("@mail.agnusmail.localhost")
+    assert body["recipient"] == "friend@example.org"  # the link's own address (reply From)
     assert body["protection"] == "e2ee-shared-secret"
     assert body["replies_left"] == 5
     with factory() as session:

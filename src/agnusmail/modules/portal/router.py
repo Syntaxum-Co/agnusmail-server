@@ -32,7 +32,12 @@ from agnusmail.modules.messages.router import Body, Pkesk
 from agnusmail.modules.outbound.router import consume_sending_quota
 from agnusmail.modules.outbound.service import parse_recipients
 from agnusmail.modules.portal import service
-from agnusmail.modules.portal.models import PortalLink, PortalMessage
+from agnusmail.modules.portal.models import (
+    MAX_VIEW_SECONDS,
+    MIN_VIEW_SECONDS,
+    PortalLink,
+    PortalMessage,
+)
 
 router = APIRouter(prefix="/portal", tags=["portal"])
 
@@ -52,6 +57,9 @@ class PortalIn(BaseModel):
     # PKESKs (sender's published keys) + one SKESK v6/Argon2 + SEIPDv2 (spec §11).
     envelope: Body
     notify: bool = True  # e-mail each recipient a notice with the link (not the password)
+    # View once: each link is readable for this long after its first access, then never
+    # again; no replies. Null: readable until expiry.
+    view_seconds: int | None = Field(default=None, ge=MIN_VIEW_SECONDS, le=MAX_VIEW_SECONDS)
 
 
 class LinkOut(BaseModel):
@@ -63,6 +71,7 @@ class RecipientStateOut(BaseModel):
     recipient: str
     replies: int
     last_access_at: UtcDatetime | None
+    viewable_until: UtcDatetime | None  # view once: end of this link's window, once opened
 
 
 class PortalOut(BaseModel):
@@ -71,6 +80,7 @@ class PortalOut(BaseModel):
     protection: str
     size: int
     recipients: list[RecipientStateOut]
+    view_seconds: int | None
     expires_at: UtcDatetime
     created_at: UtcDatetime
 
@@ -86,9 +96,11 @@ class PortalOut(BaseModel):
                     recipient=link.recipient,
                     replies=link.replies,
                     last_access_at=link.last_access_at,
+                    viewable_until=link.viewable_until,
                 )
                 for link in links
             ],
+            view_seconds=message.view_seconds,
             expires_at=message.expires_at,
             created_at=message.created_at,
         )
@@ -114,16 +126,21 @@ class TokenIn(BaseModel):
     token: Token
 
 
-class AccessOut(BaseModel):
+class LinkStateOut(BaseModel):  # what a link shows before the envelope
     version: int
     protection: str
     sender: str  # the sender's Agnusmail address
     # The address this link was made for: a reply's From (the server does not attest who
     # replied, only which link was used).
     recipient: str
-    envelope: str
     expires_at: UtcDatetime
     replies_left: int
+    view_seconds: int | None  # view once: the window the first access opens
+    viewable_until: UtcDatetime | None  # view once: set once the window is open
+
+
+class AccessOut(LinkStateOut):
+    envelope: str
 
 
 class ReplyIn(BaseModel):
@@ -196,6 +213,7 @@ async def create(
             max_notice_bytes=settings.outbound_max_message_bytes,
             now=now,
             quota=request.app.state.quota_policy,
+            view_seconds=payload.view_seconds,
         )
         base = PortalOut.build(created.message, service.links_of(s, created.message.id))
         return CreatedOut(
@@ -247,8 +265,36 @@ async def delete_portal(
     await run_in_transaction(db, lambda s: service.delete_own(s, actor, portal_id, now))
 
 
+def _link_out(opened: service.Opened, settings: Settings) -> LinkStateOut:
+    view_once = opened.message.view_seconds is not None
+    left = settings.portal_max_replies_per_link - opened.link.replies
+    return LinkStateOut(
+        version=1,
+        protection=PROTECTION,
+        sender=opened.sender,
+        recipient=opened.link.recipient,
+        expires_at=opened.message.expires_at,
+        replies_left=0 if view_once else max(left, 0),
+        view_seconds=opened.message.view_seconds,
+        viewable_until=opened.link.viewable_until,
+    )
+
+
+@router.post("/link")
+async def link(request: Request, payload: TokenIn, db: DbSessionFactory) -> LinkStateOut:
+    """The link's details without the envelope: never starts a view-once window."""
+    settings: Settings = request.app.state.settings
+    _base_url(settings)
+    await _per_ip(request, "access", settings.portal_access_per_ip_per_minute, 60)
+    now = datetime.now(UTC)
+    return await run_in_transaction(
+        db, lambda s: _link_out(service.peek(s, payload.token, now), settings)
+    )
+
+
 @router.post("/access")
 async def access(request: Request, payload: TokenIn, db: DbSessionFactory) -> AccessOut:
+    """The envelope. For a view-once message, the first call opens this link's window."""
     settings: Settings = request.app.state.settings
     _base_url(settings)
     await _per_ip(request, "access", settings.portal_access_per_ip_per_minute, 60)
@@ -257,13 +303,7 @@ async def access(request: Request, payload: TokenIn, db: DbSessionFactory) -> Ac
     def work(s: Session) -> AccessOut:
         opened = service.access(s, payload.token, now)
         return AccessOut(
-            version=1,
-            protection=PROTECTION,
-            sender=opened.sender,
-            recipient=opened.link.recipient,
-            envelope=_b64(opened.message.envelope),
-            expires_at=opened.message.expires_at,
-            replies_left=max(settings.portal_max_replies_per_link - opened.link.replies, 0),
+            **_link_out(opened, settings).model_dump(), envelope=_b64(opened.message.envelope)
         )
 
     return await run_in_transaction(db, work)

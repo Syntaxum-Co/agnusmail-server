@@ -173,3 +173,55 @@ def test_database_limits_and_purge(engine: Engine, alice: Person) -> None:
         )
     with Session(engine) as session, session.begin():
         assert purge_expired(session, now + timedelta(days=1)) >= 1
+
+
+@pytest.mark.parametrize("seconds", [59, 3601])
+def test_database_refuses_a_view_window_out_of_range(
+    engine: Engine, alice: Person, seconds: int
+) -> None:
+    now = datetime.now(UTC)
+    with Session(engine) as session, pytest.raises(IntegrityError):
+        session.add(
+            PortalMessage(
+                sender_id=uuid.UUID(alice.user.user_id),
+                client_message_id=secrets.token_hex(16),
+                envelope=b"abc",
+                size=3,
+                expires_at=now + timedelta(days=1),
+                view_seconds=seconds,
+                created_at=now,
+            )
+        )
+        session.commit()
+
+
+def test_view_once_on_postgres(engine: Engine, alice: Person, settings_env: Settings) -> None:
+    payload = {
+        "version": 1,
+        "message_id": secrets.token_hex(16),
+        "recipients": ["friend@example.org"],
+        "expires_in_days": 7,
+        "envelope": b64(envelope(alice)),
+        "notify": False,
+        "view_seconds": 60,
+    }
+    created = alice.client.post("/v1/portal/messages", json=payload)
+    assert created.status_code == 201, created.text
+    token = created.json()["links"][0]["url"].partition("#")[2]
+    from agnusmail.apps.api.main import create_app
+
+    app = create_app(settings_env, session_factory=sessionmaker(bind=engine))
+    with TestClient(app, raise_server_exceptions=False) as browser:
+        assert (
+            browser.post("/v1/portal/link", json={"token": token}).json()["viewable_until"] is None
+        )
+        opened = browser.post("/v1/portal/access", json={"token": token})
+        assert opened.status_code == 200, opened.text
+        assert opened.json()["viewable_until"] is not None
+        with Session(engine) as session, session.begin():
+            session.execute(
+                update(PortalMessage)
+                .where(PortalMessage.id == uuid.UUID(created.json()["id"]))
+                .values(expires_at=datetime.now(UTC) - timedelta(seconds=1))
+            )
+        assert browser.post("/v1/portal/access", json={"token": token}).status_code == 404

@@ -8,6 +8,10 @@ with the password. The server stores only the OpenPGP message.
   (at most 30 days) or when the sender deletes it.
 - ``portal_links``: one per recipient. Only the SHA-256 of the link token is stored, so
   the database alone does not open the portal; the token is shown once, at creation.
+
+View once (``view_seconds`` set): the first access of a link starts its window
+(``viewable_until``); after it the link answers 404, and once every link has been opened
+the message expires when the last window ends, so the purge deletes it.
 """
 
 import uuid
@@ -30,6 +34,8 @@ from agnusmail.infrastructure.database.base import Base
 from agnusmail.modules.outbound.models import MAX_ADDRESS_LENGTH
 
 MAX_PORTAL_DAYS = 30  # spec §11
+MIN_VIEW_SECONDS = 60
+MAX_VIEW_SECONDS = 3600
 
 
 class PortalMessage(Base):
@@ -43,12 +49,19 @@ class PortalMessage(Base):
     envelope: Mapped[bytes] = mapped_column(LargeBinary, nullable=False)
     size: Mapped[int] = mapped_column(Integer, nullable=False)
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    # View once: how long a link stays readable after its first access; null = until expiry.
+    view_seconds: Mapped[int | None] = mapped_column(Integer)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, default=lambda: datetime.now(UTC)
     )
 
     __table_args__ = (
         UniqueConstraint("sender_id", "client_message_id"),
+        CheckConstraint(
+            "view_seconds IS NULL OR "
+            f"view_seconds BETWEEN {MIN_VIEW_SECONDS} AND {MAX_VIEW_SECONDS}",
+            name="view_seconds_range",
+        ),
         CheckConstraint("size = length(envelope) AND size > 0", name="size_matches_envelope"),
         CheckConstraint("expires_at <= created_at + interval '30 days'", name="ttl_30_days").ddl_if(
             dialect="postgresql"
@@ -72,6 +85,8 @@ class PortalLink(Base):
     recipient: Mapped[str] = mapped_column(String(MAX_ADDRESS_LENGTH), nullable=False)
     replies: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     last_access_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # View once: set by the first access; the link answers 404 from then on.
+    viewable_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, default=lambda: datetime.now(UTC)
     )

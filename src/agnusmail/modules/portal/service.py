@@ -9,6 +9,13 @@ the outbound queue key and sent through the conventional outbound channel.
 Replies: whoever holds a link may reply, encrypted in the browser to the sender's
 published keys (§6.5 completeness); the reply lands in the sender's inbox with
 ``origin = portal``. The server does not vouch for who wrote it.
+
+View once (``view_seconds``): only ``access`` hands out the envelope, and its first call
+for a link starts that link's window; ``peek`` shows the rest without starting it. After
+the window the link is gone (404) and takes no replies at any time. When every link has
+been opened, the message expires as the last window ends and the purge deletes it,
+the sender's copy included. The server cannot stop a reader from keeping what they saw
+during the window.
 """
 
 import hashlib
@@ -91,7 +98,18 @@ class Created:
     links: list[CreatedLink]
 
 
-def notice(sender: str, recipient: str, url: str, expires_at: datetime) -> bytes:
+def _minutes(seconds: int) -> str:
+    minutes = max(seconds // 60, 1)
+    return f"{minutes} minute{'s' if minutes != 1 else ''}"
+
+
+def notice(
+    sender: str,
+    recipient: str,
+    url: str,
+    expires_at: datetime,
+    view_seconds: int | None = None,
+) -> bytes:
     """The notice e-mail: fixed text, 7-bit, nothing from the message itself."""
     lines = [
         f"From: {sender}",
@@ -109,6 +127,15 @@ def notice(sender: str, recipient: str, url: str, expires_at: datetime) -> bytes
         "You need the password the sender gives you through another channel",
         "(it is never sent by e-mail).",
         f"The message will be deleted on {format_datetime(expires_at)}.",
+        *(
+            [
+                "",
+                f"It can be read only once: you have {_minutes(view_seconds)} after you open it",
+                "with the password. After that the link stops working.",
+            ]
+            if view_seconds is not None
+            else []
+        ),
         "",
         "If you were not expecting it, you can ignore this e-mail.",
     ]
@@ -129,6 +156,7 @@ def create(
     max_notice_bytes: int,
     now: datetime,
     quota: "QuotaPolicy | None" = None,
+    view_seconds: int | None = None,
 ) -> Created:
     reject_hosted(session, recipients)
     from agnusmail.modules.abuse.service import require_unrestricted
@@ -162,6 +190,7 @@ def create(
         envelope=envelope,
         size=len(envelope),
         expires_at=now + timedelta(days=days),
+        view_seconds=view_seconds,
         created_at=now,
     )
     session.add(message)
@@ -181,7 +210,7 @@ def create(
         url = link_url(base_url, token)
         links.append(CreatedLink(recipient, url))
         if notify:
-            text = notice(sender, recipient, url, message.expires_at)
+            text = notice(sender, recipient, url, message.expires_at, view_seconds)
             sealed = encrypt_to_certificates(text, [keys[0].material])
             payload = sealed.pkesks[keys[0].encryption_fingerprint] + sealed.body
             del text
@@ -202,7 +231,12 @@ def create(
         actor,
         AuditEventType.PORTAL_CREATED,
         owner_id=actor.user_id,
-        details={"portal_id": str(message.id), "recipients": len(recipients), "notify": notify},
+        details={
+            "portal_id": str(message.id),
+            "recipients": len(recipients),
+            "notify": notify,
+            "view_seconds": view_seconds,
+        },
         now=now,
     )
     return Created(message, links)
@@ -222,6 +256,8 @@ def _by_token(session: Session, token: str, now: datetime, *, lock: bool = False
     message = session.get(PortalMessage, link.portal_message_id)
     if message is None or _utc(message.expires_at) <= now:
         raise ResourceNotFoundError()  # expired: the purge removes it soon
+    if link.viewable_until is not None and _utc(link.viewable_until) <= now:
+        raise ResourceNotFoundError()  # view once: this link's window is over
     return link
 
 
@@ -232,11 +268,27 @@ class Opened:
     sender: str
 
 
-def access(session: Session, token: str, now: datetime) -> Opened:
+def peek(session: Session, token: str, now: datetime) -> Opened:
+    """What the page shows before the password: never starts a view-once window."""
     link = _by_token(session, token, now)
     message = session.get(PortalMessage, link.portal_message_id)
     assert message is not None
+    return Opened(link, message, sender_address(session, message.sender_id))
+
+
+def access(session: Session, token: str, now: datetime) -> Opened:
+    """Hands out the envelope; for a view-once message, the first call opens the window."""
+    link = _by_token(session, token, now, lock=True)
+    message = session.get(PortalMessage, link.portal_message_id, with_for_update=True)
+    assert message is not None
     link.last_access_at = now
+    if message.view_seconds is not None and link.viewable_until is None:
+        link.viewable_until = now + timedelta(seconds=message.view_seconds)
+        session.flush()
+        windows = [other.viewable_until for other in links_of(session, message.id)]
+        if all(w is not None for w in windows):  # every link opened: delete after the last
+            last = max(_utc(w) for w in windows if w is not None)
+            message.expires_at = min(_utc(message.expires_at), last)
     session.flush()
     return Opened(link, message, sender_address(session, message.sender_id))
 
@@ -261,10 +313,10 @@ def reply(
 ) -> int:
     """Store the reply in the sender's inbox; returns the link's reply count."""
     link = _by_token(session, token, now, lock=True)
-    if link.replies >= max_replies:
-        raise ReplyLimitError()
     message = session.get(PortalMessage, link.portal_message_id)
     assert message is not None
+    if message.view_seconds is not None or link.replies >= max_replies:
+        raise ReplyLimitError()  # view-once links are read only
     if quota is not None:
         quota.require_recipient(session, message.sender_id, len(body), now)
     store_for_owner(
